@@ -67,6 +67,7 @@ bool IconSearchPopup::setup(GJGarageLayer* garage) {
             }
         }
         auto btn = CCMenuItemSpriteExtra::create(sprite, m_garage, menu_selector(GJGarageLayer::onSelect));
+        btn->m_iconType = c.type;
         btn->setTag(c.id);
         sprite->setPosition({15, 15});
         btn->setContentSize({30, 30});
