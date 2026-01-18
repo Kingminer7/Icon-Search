@@ -23,6 +23,7 @@ struct SearchCandidate {
     bool unlocked;
     std::string game;
     std::string achievement;
+    std::string name;
 };
 
 class IconSearchPopup : public geode::Popup<GJGarageLayer*> {
@@ -30,13 +31,8 @@ protected:
     bool setup(GJGarageLayer* garage) override;
     void keyDown(cocos2d::enumKeyCodes key) override;
 
-    void updateNodes();
-    void updateResults();
-    void getCandidates();
-
     // cause getting all this info might be laggy, id rather do it once
     std::vector<SearchCandidate> m_candidates;
-    Search m_search;
     std::vector<std::pair<SearchCandidate, int>> m_results;
     GJGarageLayer* m_garage = nullptr;
     cocos2d::CCMenu* m_menu = nullptr;
@@ -44,5 +40,20 @@ protected:
     CCMenuItemSpriteExtra* m_prev = nullptr;
     CCMenuItemSpriteExtra* m_next = nullptr;
 public:
+    void updateNodes();
+    void updateResults();
+    void getCandidates();
+    void addCandidate(IconType type, int id);
+
     static IconSearchPopup* create(GJGarageLayer* garage);
+
+    Search m_search;
+};
+
+class IconSearchFilterPopup : public geode::Popup<IconSearchPopup*> {
+protected:
+    bool setup(IconSearchPopup* parent);
+
+public:
+    static IconSearchFilterPopup* create(IconSearchPopup* parent);
 };

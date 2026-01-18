@@ -1,5 +1,7 @@
 #include "IconSearchPopup.hpp"
 
+#include <utility>
+
 using namespace geode::prelude;
 
 CCSprite* makeSprite(const std::string& topName, const float topScale, const std::string& bottomName) {
@@ -29,32 +31,42 @@ bool IconSearchPopup::setup(GJGarageLayer* garage) {
     m_input->setID("search-input");
     m_input->setCommonFilter(CommonFilter::Any);
     m_input->setCallback([this](auto str) {
-        m_search.query = str;
+        m_search.query = std::move(str);
     });
-    m_mainLayer->addChildAtPosition(m_input, Anchor::Top,  CCPoint{0, -30});
+    m_mainLayer->addChildAtPosition(m_input, Anchor::Top, CCPoint{0, -30});
 
     auto searchSpr = makeSprite("search.png"_spr, 1.f, "geode.loader/GE_button_05.png");
     searchSpr->setScale(.75f);
     auto searchBtn = CCMenuItemExt::createSpriteExtra(searchSpr, [this](auto) {
-	    updateNodes();
+        updateNodes();
     });
     searchBtn->setID("search-btn");
-    m_buttonMenu->addChildAtPosition(searchBtn, Anchor::Top,  CCPoint{m_input->getScaledContentWidth() / 2 + searchBtn->getScaledContentWidth() / 2 + 5, -30});
+    m_buttonMenu->addChildAtPosition(searchBtn, Anchor::Top, CCPoint{
+                                         m_input->getScaledContentWidth() / 2 + searchBtn->getScaledContentWidth() / 2 +
+                                         5,
+                                         -30
+                                     });
 
     auto filterSpr = makeSprite("GJ_filterIcon_001.png", 1.f, "geode.loader/GE_button_05.png");
     filterSpr->setScale(.75f);
-    auto filterBtn = CCMenuItemExt::createSpriteExtra(filterSpr, [](auto) {
-
+    auto filterBtn = CCMenuItemExt::createSpriteExtra(filterSpr, [this](auto) {
+        IconSearchFilterPopup::create(this)->show();
     });
     filterBtn->setID("filter-btn");
-    m_buttonMenu->addChildAtPosition(filterBtn, Anchor::Top,  CCPoint{-m_input->getScaledContentWidth() / 2 - filterBtn->getScaledContentWidth() / 2 - 5, -30});
+    m_buttonMenu->addChildAtPosition(filterBtn, Anchor::Top, CCPoint{
+                                         -m_input->getScaledContentWidth() / 2 - filterBtn->getScaledContentWidth() / 2
+                                         - 5,
+                                         -30
+                                     });
 
     m_menu = CCMenu::create();
     m_menu->setID("search-menu");
     m_menu->setContentSize({360, 210});
     m_menu->ignoreAnchorPointForPosition(false); // why does this exist, it sucks :P
     m_mainLayer->addChildAtPosition(m_menu, Anchor::Center, CCPoint{0, -20});
-    m_menu->setLayout(RowLayout::create()->setGrowCrossAxis(true)->setCrossAxisAlignment(AxisAlignment::End)->setCrossAxisOverflow(false)->setGap(2));
+    m_menu->setLayout(
+        RowLayout::create()->setGrowCrossAxis(true)->setCrossAxisAlignment(AxisAlignment::End)->
+                             setCrossAxisOverflow(false)->setGap(2));
 
     auto bg = CCScale9Sprite::create("square02_001.png");
     bg->setID("search-bg");
@@ -63,22 +75,22 @@ bool IconSearchPopup::setup(GJGarageLayer* garage) {
     bg->setContentSize(m_menu->getContentSize());
     m_mainLayer->addChildAtPosition(bg, Anchor::Center, CCPoint{0, -20});
 
-    m_prev = CCMenuItemExt::createSpriteExtraWithFrameName("GJ_arrow_02_001.png", 1.f, [this](auto){
-	m_search.page--;
-	updateNodes();
+    m_prev = CCMenuItemExt::createSpriteExtraWithFrameName("GJ_arrow_02_001.png", 1.f, [this](auto) {
+        m_search.page--;
+        updateNodes();
     });
     m_prev->setID("prev-btn");
     m_prev->setVisible(false);
-    m_buttonMenu->addChildAtPosition(m_prev, Anchor::Center, {-210, -15});
+    m_buttonMenu->addChildAtPosition(m_prev, Anchor::Center, {-220, -15});
 
-    m_next = CCMenuItemExt::createSpriteExtraWithFrameName("GJ_arrow_02_001.png", 1.f, [this](auto){
-	m_search.page++;
-	updateNodes();
+    m_next = CCMenuItemExt::createSpriteExtraWithFrameName("GJ_arrow_02_001.png", 1.f, [this](auto) {
+        m_search.page++;
+        updateNodes();
     });
     m_next->setID("next-btn");
     m_next->setVisible(false);
     static_cast<CCSprite*>(m_next->getNormalImage())->setFlipX(true);
-    m_buttonMenu->addChildAtPosition(m_next, Anchor::Center, {210, -15});
+    m_buttonMenu->addChildAtPosition(m_next, Anchor::Center, {220, -15});
 
     return true;
 }
@@ -126,6 +138,7 @@ std::string iconTypeToString(const IconType type) {
 
 void IconSearchPopup::updateNodes() {
     updateResults();
+    auto gm = GameManager::get();
     m_menu->removeAllChildren();
     if (m_search.page < 0) m_search.page = 0;
     if (m_search.page * m_search.pageSize > m_results.size()) m_search.page = m_results.size() / m_search.pageSize;
@@ -143,6 +156,11 @@ void IconSearchPopup::updateNodes() {
                 break;
             }
             case IconType::Item: {
+                log::info("{}", i);
+                if (i > 6 && i < 16) {
+                    sprite = GJPathSprite::create(i);
+                    break;
+                }
                 sprite = CCSprite::createWithSpriteFrameName(fmt::format("gjItem_{:02}_001.png", c.id).c_str());
                 break;
             }
@@ -154,6 +172,7 @@ void IconSearchPopup::updateNodes() {
                 auto is = SimplePlayer::create(0);
                 is->setScale(.8);
                 is->updatePlayerFrame(c.id, c.type);
+                is->setColors(gm->colorForIdx(gm->getPlayerColor()), gm->colorForIdx(gm->getPlayerColor2()));
                 sprite = is;
             }
         }
@@ -162,7 +181,7 @@ void IconSearchPopup::updateNodes() {
         btn->setTag(c.id);
         sprite->setPosition({15, 15});
         btn->setContentSize({30, 30});
-	btn->setID(fmt::format("{}-{}", iconTypeToString(c.type), c.id));
+        btn->setID(fmt::format("{}-{}", iconTypeToString(c.type), c.id));
         m_menu->addChild(btn);
     }
     m_menu->updateLayout();
@@ -186,17 +205,23 @@ int getResultMatch(const SearchCandidate& candidate, std::string_view search) {
         if (numToString(id).starts_with(search)) return 1; // prefix num
     }
 
+    if (candidate.name == search) // exact name
+        return 2;
+
     if (candidate.desc == search) // exact desc
         return 2;
+
+    if (candidate.achievement == search) // exact achievement
+        return 2;
+
+    if (candidate.name.starts_with(search)) // prefix name
+        return 3;
 
     if (candidate.desc.starts_with(search)) // prefix desc
         return 3;
 
-    if (candidate.achievement == search) // exact achievement
-	return 2;
-
     if (candidate.achievement.starts_with(search)) // prefix achievement
-	return 3;
+        return 3;
 
     if (candidate.game == search) // exact game
         return 4;
@@ -206,23 +231,20 @@ int getResultMatch(const SearchCandidate& candidate, std::string_view search) {
 
     // fuzzy desc
     // modified code from eclipse that spaghett added (thanks prevter for sending)
-    const auto descIt = std::ranges::search(
-        candidate.desc, search,
-        [](const char a, const char b) {
-            return a == std::tolower(b);
-        }
-    ).begin();
-    if (descIt != candidate.desc.end())
-        return 10 + descIt - candidate.desc.begin();
+#define fuzzy(type) const auto type##It = std::ranges::search( \
+    candidate.type, search, \
+    [](const char a, const char b) { \
+        return a == std::tolower(b); \
+    } \
+    ).begin(); \
+    if (type##It != candidate.type.end()) \
+        return 10 + type##It - candidate.type.begin();
 
-    const auto achIt = std::ranges::search(
-        candidate.achievement, search,
-        [](const char a, const char b) {
-            return a == std::tolower(b);
-        }
-    ).begin();
-    if (achIt != candidate.achievement.end())
-        return 10 + achIt - candidate.achievement.begin();
+    fuzzy(name)
+    fuzzy(desc)
+    fuzzy(achievement)
+
+#undef fuzzy
 
     return -1;
 }
@@ -245,91 +267,101 @@ void IconSearchPopup::updateResults() {
             }
         );
 
-        m_results.insert(it, { candidate, score });
+        m_results.insert(it, {candidate, score});
     }
 }
 
 void IconSearchPopup::getCandidates() {
     m_candidates.clear();
     auto gm = GameManager::sharedState();
-    auto gsm = GameStatsManager::sharedState();
-    auto am = AchievementManager::sharedState();
-    for (IconType type : {IconType::Cube, IconType::Ship, IconType::Ball, IconType::Ufo, IconType::Wave, IconType::Robot, IconType::Spider, IconType::Swing, IconType::Jetpack, IconType::DeathEffect, IconType::Special, IconType::ShipFire}) {
-        auto count = gm->countForType(type);
-        for (int id = 1; id <= count; id++) {
-            auto ut = gm->iconTypeToUnlockType(type);
-            auto res = SearchCandidate{
-                .type = type,
-                .id = id,
-                .unlocked = gm->isIconUnlocked(id, type),
-            };
-
-            /* unlock states
-             * 0 = default OR 2.21
-             * 1 = descriptionForUnlock
-             * 2 = secret chest
-             * 3 = special chest
-             * 4 = shop
-             * 5 = scratch
-             * 6 = community shop
-             * 7 = mechanic
-             * 8 = diamond shop
-             */
-
-            switch (gsm->getItemUnlockState(id, ut)) {
-                case 0:
-                    if (isUnlockedByDefault(id, type)) res.desc = "unlocked by default";
-                    else res.desc = "unlocked in 2.21";
-                    break;
-                case 1:
-                    res.desc = string::toLower(GJGarageLayer::descriptionForUnlock(id, ut));
-                    break;
-                case 2:
-                    res.desc = "find this in a secret chest";
-                    break;
-                case 3:
-                    res.desc = "find this in a special chest";
-                    break;
-                case 4:
-                    res.desc = "buy this in the regular shop";
-                    break;
-                case 5:
-                    res.desc = "buy this in the secret shop";
-                    break;
-                case 6:
-                    res.desc = "buy this in the community shop";
-                    break;
-                case 7:
-                    res.desc = "buy this in the mechanic shop";
-                    break;
-                case 8:
-                    res.desc = "buy this in the diamond shop";
-                    break;
-                default:
-                    break;
-            }
-            /* achievement limits? (AchievementManager::limitForAchievement)
-                 * 0 = generic?
-                 * 1 = full?
-                 * 2 = world
-                 * 3 = subzero
-                 * 4 = meltdown
-                 */
-
-            auto achieve = am->achievementForUnlock(id, ut);
-            if (!achieve.empty()) {
-		if (auto data = static_cast<CCDictionary*>(am->m_platformAchievements->objectForKey(achieve))) res.achievement = string::toLower(data->valueForKey("title")->getCString());
-                auto limit = am->limitForAchievement(achieve);
-                if (limit == 1) res.game = "full";
-                if (limit == 2) res.game = "world";
-                if (limit == 3) res.game = "subzero";
-                if (limit == 4) res.game = "meltdown";
-            }
-
-            m_candidates.push_back(std::move(res));
-        }
+    // for (IconType type : {IconType::Cube, IconType::Ship, IconType::Ball, IconType::Ufo, IconType::Wave, IconType::Robot, IconType::Spider, IconType::Swing, IconType::Jetpack, IconType::DeathEffect, IconType::Special, IconType::ShipFire}) {
+    //     auto count = gm->countForType(type);
+    //     for (int id = 1; id <= count; id++) {
+    //         checkCandidate(type, id);
+    //     }
+    // }
+    for (int i = 1; i <= 20; i++) {
+        addCandidate(IconType::Item, i);
     }
     log::debug("Loaded {} search candidates.", m_candidates.size());
+}
+
+void IconSearchPopup::addCandidate(IconType type, int id) {
+    auto gm = GameManager::sharedState();
+    auto gsm = GameStatsManager::sharedState();
+    auto am = AchievementManager::sharedState();
+    auto ut = gm->iconTypeToUnlockType(type);
+    auto res = SearchCandidate{
+        .type = type,
+        .id = id,
+        .unlocked = gm->isIconUnlocked(id, type),
+        .name = string::toLower(ItemInfoPopup::nameForUnlockType(id, ut)),
+    };
+
+    /* unlock states
+     * 0 = default OR 2.21
+     * 1 = descriptionForUnlock
+     * 2 = secret chest
+     * 3 = special chest
+     * 4 = shop
+     * 5 = scratch
+     * 6 = community shop
+     * 7 = mechanic
+     * 8 = diamond shop
+     */
+
+    switch (gsm->getItemUnlockState(id, ut)) {
+        case 0:
+            if (isUnlockedByDefault(id, type)) res.desc = "unlocked by default";
+            else res.desc = "unlocked in 2.21";
+            break;
+        case 1:
+            res.desc = string::toLower(GJGarageLayer::descriptionForUnlock(id, ut));
+            break;
+        case 2:
+            res.desc = "find this in a secret chest";
+            break;
+        case 3:
+            res.desc = "find this in a special chest";
+            break;
+        case 4:
+            res.desc = "buy this in the regular shop";
+            break;
+        case 5:
+            res.desc = "buy this in the secret shop";
+            break;
+        case 6:
+            res.desc = "buy this in the community shop";
+            break;
+        case 7:
+            res.desc = "buy this in the mechanic shop";
+            break;
+        case 8:
+            res.desc = "buy this in the diamond shop";
+            break;
+        default:
+            break;
+    }
+    /* achievement limits? (AchievementManager::limitForAchievement)
+         * 0 = generic?
+         * 1 = full?
+         * 2 = world
+         * 3 = subzero
+         * 4 = meltdown
+         */
+
+    auto achieve = am->achievementForUnlock(id, ut);
+    if (!achieve.empty()) {
+        if (auto data = static_cast<CCDictionary*>(am->m_platformAchievements->objectForKey(achieve)))
+            res.achievement =string::toLower(data->valueForKey("title")->getCString());
+        auto limit = am->limitForAchievement(achieve);
+        if (limit == 1) res.game = "full";
+        if (limit == 2) res.game = "world";
+        if (limit == 3) res.game = "subzero";
+        if (limit == 4) res.game = "meltdown";
+    }
+
+    m_candidates.push_back(std::move(res));
 }
 
 IconSearchPopup* IconSearchPopup::create(GJGarageLayer* garage) {
@@ -338,4 +370,44 @@ IconSearchPopup* IconSearchPopup::create(GJGarageLayer* garage) {
     return delete ret, ret;
 }
 
-// std::vector<SearchCandidate> IconSearchPopup::m_candidates = {};
+bool IconSearchFilterPopup::setup(IconSearchPopup* parent) {
+    setID("IconSearchPopup");
+    m_bgSprite->setID("background");
+    m_closeBtn->setID("close-btn");
+    m_buttonMenu->setID("button-menu");
+    CCMenu* typeMenu = CCMenu::create();
+    typeMenu->setContentSize({200, 30});
+    typeMenu->setLayout(
+        RowLayout::create()->setGrowCrossAxis(true)->setCrossAxisAlignment(AxisAlignment::End)->
+                             setCrossAxisOverflow(true)->setGap(2));
+    for (auto [type, str] : std::vector<std::pair<IconType, std::string>>{
+             {IconType::Cube, "icon"},
+             {IconType::Ship, "ship"},
+             {IconType::Ball, "ball"},
+             {IconType::Ufo, "bird"},
+             {IconType::Wave, "dart"},
+             {IconType::Robot, "robot"},
+             {IconType::Spider, "spider"},
+             {IconType::Swing, "swing"},
+             {IconType::Jetpack, "jetpack"},
+             {IconType::DeathEffect, "explosion"},
+             {IconType::Special, "streak"},
+             {IconType::ShipFire, "streak"},
+             {IconType::Item, "streak"},
+         }) {
+        auto btn = CCMenuItemExt::createTogglerWithFrameName(fmt::format("gj_{}Btn_on_001.png", str),
+                                                             fmt::format("gj_{}Btn_off_001.png", str), 1.f,
+                                                             [](auto) {});
+        typeMenu->addChild(btn);
+    }
+    typeMenu->updateLayout();
+
+    m_mainLayer->addChildAtPosition(typeMenu, Anchor::Center, {0, 20});
+    return true;
+}
+
+IconSearchFilterPopup* IconSearchFilterPopup::create(IconSearchPopup* parent) {
+    auto ret = new IconSearchFilterPopup();
+    if (ret->initAnchored(250, 200, parent, "geode.loader/GE_square02.png")) return ret->autorelease(), ret;
+    return delete ret, ret;
+}
