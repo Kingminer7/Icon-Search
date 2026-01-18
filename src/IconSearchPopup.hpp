@@ -32,15 +32,17 @@ protected:
 
     void updateNodes();
     void updateResults();
-    static void getCandidates();
+    void getCandidates();
 
     // cause getting all this info might be laggy, id rather do it once
-    static std::vector<SearchCandidate> m_candidates;
+    std::vector<SearchCandidate> m_candidates;
     Search m_search;
     std::vector<std::pair<SearchCandidate, int>> m_results;
     GJGarageLayer* m_garage = nullptr;
     cocos2d::CCMenu* m_menu = nullptr;
     geode::TextInput* m_input = nullptr;
+    CCMenuItemSpriteExtra* m_prev = nullptr;
+    CCMenuItemSpriteExtra* m_next = nullptr;
 public:
     static IconSearchPopup* create(GJGarageLayer* garage);
 };

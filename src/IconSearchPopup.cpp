@@ -17,9 +17,16 @@ CCSprite* makeSprite(const std::string& topName, const float topScale, const std
 }
 
 bool IconSearchPopup::setup(GJGarageLayer* garage) {
+    setID("IconSearchPopup");
+    m_bgSprite->setZOrder(-2);
+    m_bgSprite->setID("background");
+    m_closeBtn->setID("close-btn");
+    m_buttonMenu->setID("button-menu");
+
     m_garage = garage;
-    if (m_candidates.empty()) getCandidates();
+    getCandidates();
     m_input = TextInput::create(280, "Search Icons...");
+    m_input->setID("search-input");
     m_input->setCommonFilter(CommonFilter::Any);
     m_input->setCallback([this](auto str) {
         m_search.query = str;
@@ -31,6 +38,7 @@ bool IconSearchPopup::setup(GJGarageLayer* garage) {
     auto searchBtn = CCMenuItemExt::createSpriteExtra(searchSpr, [this](auto) {
 	    updateNodes();
     });
+    searchBtn->setID("search-btn");
     m_buttonMenu->addChildAtPosition(searchBtn, Anchor::Top,  CCPoint{m_input->getScaledContentWidth() / 2 + searchBtn->getScaledContentWidth() / 2 + 5, -30});
 
     auto filterSpr = makeSprite("GJ_filterIcon_001.png", 1.f, "geode.loader/GE_button_05.png");
@@ -38,18 +46,39 @@ bool IconSearchPopup::setup(GJGarageLayer* garage) {
     auto filterBtn = CCMenuItemExt::createSpriteExtra(filterSpr, [](auto) {
 
     });
+    filterBtn->setID("filter-btn");
     m_buttonMenu->addChildAtPosition(filterBtn, Anchor::Top,  CCPoint{-m_input->getScaledContentWidth() / 2 - filterBtn->getScaledContentWidth() / 2 - 5, -30});
 
     m_menu = CCMenu::create();
+    m_menu->setID("search-menu");
     m_menu->setContentSize({360, 210});
     m_menu->ignoreAnchorPointForPosition(false); // why does this exist, it sucks :P
     m_mainLayer->addChildAtPosition(m_menu, Anchor::Center, CCPoint{0, -20});
     m_menu->setLayout(RowLayout::create()->setGrowCrossAxis(true)->setCrossAxisAlignment(AxisAlignment::End)->setCrossAxisOverflow(false)->setGap(2));
 
-    auto scrollBg = CCLayerColor::create(ccColor4B{0,0,0,50});
-    scrollBg->ignoreAnchorPointForPosition(false);
-    scrollBg->setContentSize(m_menu->getContentSize());
-    m_mainLayer->addChildAtPosition(scrollBg, Anchor::Center, CCPoint{0, -20});
+    auto bg = CCScale9Sprite::create("square02_001.png");
+    bg->setID("search-bg");
+    bg->setZOrder(-1);
+    bg->setOpacity(72);
+    bg->setContentSize(m_menu->getContentSize());
+    m_mainLayer->addChildAtPosition(bg, Anchor::Center, CCPoint{0, -20});
+
+    m_prev = CCMenuItemExt::createSpriteExtraWithFrameName("GJ_arrow_02_001.png", 1.f, [this](auto){
+	m_search.page--;
+	updateNodes();
+    });
+    m_prev->setID("prev-btn");
+    m_prev->setVisible(false);
+    m_buttonMenu->addChildAtPosition(m_prev, Anchor::Center, {-210, -15});
+
+    m_next = CCMenuItemExt::createSpriteExtraWithFrameName("GJ_arrow_02_001.png", 1.f, [this](auto){
+	m_search.page++;
+	updateNodes();
+    });
+    m_next->setID("next-btn");
+    m_next->setVisible(false);
+    static_cast<CCSprite*>(m_next->getNormalImage())->setFlipX(true);
+    m_buttonMenu->addChildAtPosition(m_next, Anchor::Center, {210, -15});
 
     return true;
 }
@@ -63,9 +92,42 @@ void IconSearchPopup::keyDown(enumKeyCodes key) {
     Popup::keyDown(key);
 }
 
+std::string iconTypeToString(const IconType type) {
+    switch (type) {
+        case IconType::Cube:
+            return "Cube";
+        case IconType::Ship:
+            return "Ship";
+        case IconType::Ball:
+            return "Ball";
+        case IconType::Ufo:
+            return "Ufo";
+        case IconType::Wave:
+            return "Wave";
+        case IconType::Robot:
+            return "Robot";
+        case IconType::Spider:
+            return "Spider";
+        case IconType::Swing:
+            return "Swing";
+        case IconType::Jetpack:
+            return "Jetpack";
+        case IconType::DeathEffect:
+            return "Death Effect";
+        case IconType::Special:
+            return "Trail";
+        case IconType::Item:
+            return "Item";
+        case IconType::ShipFire:
+            return "Ship Fire";
+    }
+    return "Unknown";
+}
+
 void IconSearchPopup::updateNodes() {
     updateResults();
     m_menu->removeAllChildren();
+    if (m_search.page < 0) m_search.page = 0;
     if (m_search.page * m_search.pageSize > m_results.size()) m_search.page = m_results.size() / m_search.pageSize;
     for (int i = m_search.page * m_search.pageSize; i < (m_search.page + 1) * m_search.pageSize; i++) {
         if (i >= m_results.size()) break;
@@ -100,9 +162,13 @@ void IconSearchPopup::updateNodes() {
         btn->setTag(c.id);
         sprite->setPosition({15, 15});
         btn->setContentSize({30, 30});
+	btn->setID(fmt::format("{}-{}", iconTypeToString(c.type), c.id));
         m_menu->addChild(btn);
     }
     m_menu->updateLayout();
+
+    m_prev->setVisible(m_search.page > 0);
+    m_next->setVisible(m_search.page < m_results.size() / m_search.pageSize);
 }
 
 inline bool isUnlockedByDefault(const int id, const IconType type) {
@@ -110,38 +176,6 @@ inline bool isUnlockedByDefault(const int id, const IconType type) {
         return id < 5;
     }
     return id < 2;
-}
-
-std::string iconTypeToString(const IconType type) {
-    switch (type) {
-        case IconType::Cube:
-            return "Cube";
-        case IconType::Ship:
-            return "Ship";
-        case IconType::Ball:
-            return "Ball";
-        case IconType::Ufo:
-            return "Ufo";
-        case IconType::Wave:
-            return "Wave";
-        case IconType::Robot:
-            return "Robot";
-        case IconType::Spider:
-            return "Spider";
-        case IconType::Swing:
-            return "Swing";
-        case IconType::Jetpack:
-            return "Jetpack";
-        case IconType::DeathEffect:
-            return "Death Effect";
-        case IconType::Special:
-            return "Trail";
-        case IconType::Item:
-            return "Item";
-        case IconType::ShipFire:
-            return "Ship Fire";
-    }
-    return "Unknown";
 }
 
 int getResultMatch(const SearchCandidate& candidate, std::string_view search) {
@@ -304,4 +338,4 @@ IconSearchPopup* IconSearchPopup::create(GJGarageLayer* garage) {
     return delete ret, ret;
 }
 
-std::vector<SearchCandidate> IconSearchPopup::m_candidates = {};
+// std::vector<SearchCandidate> IconSearchPopup::m_candidates = {};
