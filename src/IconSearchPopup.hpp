@@ -8,14 +8,12 @@
 #include <vector>
 #include <utility>
 
-#include "MenuScrollLayer.hpp"
-
 struct Search {
     std::string query;
     std::vector<IconType> types;
     std::optional<bool> unlocked = std::nullopt;
     int page = 0;
-    int pageSize = 77;
+    int pageSize = 84;
 };
 
 struct SearchCandidate {
@@ -38,7 +36,7 @@ protected:
     Search m_search;
     std::vector<std::pair<SearchCandidate, int>> m_results;
     GJGarageLayer* m_garage = nullptr;
-    MenuScrollLayer* m_scroll = nullptr;
+    cocos2d::CCMenu* m_scroll = nullptr;
 public:
     static IconSearchPopup* create(GJGarageLayer* garage);
 };

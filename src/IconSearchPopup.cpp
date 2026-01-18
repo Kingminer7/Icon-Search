@@ -1,7 +1,5 @@
 #include "IconSearchPopup.hpp"
 
-#include "MenuScrollLayer.hpp"
-
 using namespace geode::prelude;
 
 CCSprite* makeSprite(const std::string& topName, const float topScale, const std::string& bottomName) {
@@ -24,10 +22,16 @@ bool IconSearchPopup::setup(GJGarageLayer* garage) {
     auto input = TextInput::create(280, "Search Icons...");
     input->setCallback([this](auto str) {
         m_search.query = str;
-        updateResults();
-        updateNodes();
     });
     m_mainLayer->addChildAtPosition(input, Anchor::Top,  CCPoint{0, -30});
+
+    auto searchSpr = makeSprite("search.png"_spr, 1.f, "geode.loader/GE_button_05.png");
+    searchSpr->setScale(.75f);
+    auto searchBtn = CCMenuItemExt::createSpriteExtra(searchSpr, [this](auto) {
+	updateResults();
+	updateNodes();
+    });
+    m_buttonMenu->addChildAtPosition(searchBtn, Anchor::Top,  CCPoint{input->getScaledContentWidth() / 2 + searchBtn->getScaledContentWidth() / 2 + 5, -30});
 
     auto filterSpr = makeSprite("GJ_filterIcon_001.png", 1.f, "geode.loader/GE_button_05.png");
     filterSpr->setScale(.75f);
@@ -36,34 +40,27 @@ bool IconSearchPopup::setup(GJGarageLayer* garage) {
     });
     m_buttonMenu->addChildAtPosition(filterBtn, Anchor::Top,  CCPoint{-input->getScaledContentWidth() / 2 - filterBtn->getScaledContentWidth() / 2 - 5, -30});
 
-    m_scroll = MenuScrollLayer::create({360, 210});
+    m_scroll = CCMenu::create();
+    m_scroll->setContentSize({360, 210});
     m_scroll->ignoreAnchorPointForPosition(false); // why does this exist, it sucks :P
     m_mainLayer->addChildAtPosition(m_scroll, Anchor::Center, CCPoint{0, -20});
-    m_scroll->m_contentLayer->setLayout(RowLayout::create()->setGrowCrossAxis(true)->setCrossAxisOverflow(true)->setCrossAxisAlignment(AxisAlignment::Start)->setGap(2));
+    m_scroll->setLayout(RowLayout::create()->setGrowCrossAxis(true)->setCrossAxisAlignment(AxisAlignment::End)->setCrossAxisOverflow(false)->setGap(2));
 
     auto scrollBg = CCLayerColor::create(ccColor4B{0,0,0,50});
     scrollBg->ignoreAnchorPointForPosition(false);
     scrollBg->setContentSize(m_scroll->getContentSize());
     m_mainLayer->addChildAtPosition(scrollBg, Anchor::Center, CCPoint{0, -20});
 
-    updateNodes();
-
     return true;
 }
 
 void IconSearchPopup::updateNodes() {
-    m_scroll->m_contentLayer->removeAllChildren();
+    m_scroll->removeAllChildren();
     if (m_search.page * m_search.pageSize > m_results.size()) m_search.page = m_results.size() / m_search.pageSize;
-    log::info("{}; {}; {}", m_search.page * m_search.pageSize, (m_search.page + 1) * m_search.pageSize, m_search.page * m_search.pageSize < (m_search.page + 1) * m_search.pageSize);
     for (int i = m_search.page * m_search.pageSize; i < (m_search.page + 1) * m_search.pageSize; i++) {
-        log::info("Doing icon {}", i);
         if (i >= m_results.size()) break;
-        log::info("Yeah", i);
-        log::info("{} {}", m_results.size(), i);
         auto c = m_results[i].first;
-        log::info("A");
         CCSprite* sprite;
-        log::info("B");
         switch (c.type) {
             case IconType::Special: {
                 sprite = CCSprite::createWithSpriteFrameName(fmt::format("player_special_{:02}_001.png", c.id).c_str());
@@ -88,26 +85,14 @@ void IconSearchPopup::updateNodes() {
                 sprite = is;
             }
         }
-        log::info("C");
         auto btn = CCMenuItemSpriteExtra::create(sprite, m_garage, menu_selector(GJGarageLayer::onSelect));
-        log::info("D");
         btn->m_iconType = c.type;
-        log::info("E");
         btn->setTag(c.id);
-        log::info("F");
         sprite->setPosition({15, 15});
-        log::info("G");
         btn->setContentSize({30, 30});
-        log::info("H");
-        m_scroll->m_contentLayer->addChild(btn);
-        log::info("I");
+        m_scroll->addChild(btn);
     }
-    log::info("J");
-    m_scroll->m_contentLayer->updateLayout();
-    m_scroll->m_contentLayer->setContentHeight(std::max(m_scroll->m_contentLayer->getContentHeight(),m_scroll->getContentHeight()));
-    log::info("K");
-    m_scroll->scrollToTop();
-    log::info("L");
+    m_scroll->updateLayout();
 }
 
 inline bool isUnlockedByDefault(const int id, const IconType type) {
@@ -199,7 +184,7 @@ void IconSearchPopup::updateResults() {
         if (score < 0)
             continue;
 
-        const auto it = std::ranges::lower_bound(
+        const auto it = std::ranges::upper_bound(
             m_results, score,
             {}, [](auto const& c) {
                 return c.second;
