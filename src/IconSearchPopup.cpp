@@ -19,43 +19,52 @@ CCSprite* makeSprite(const std::string& topName, const float topScale, const std
 bool IconSearchPopup::setup(GJGarageLayer* garage) {
     m_garage = garage;
     if (m_candidates.empty()) getCandidates();
-    auto input = TextInput::create(280, "Search Icons...");
-    input->setCallback([this](auto str) {
+    m_input = TextInput::create(280, "Search Icons...");
+    m_input->setCallback([this](auto str) {
         m_search.query = str;
     });
-    m_mainLayer->addChildAtPosition(input, Anchor::Top,  CCPoint{0, -30});
+    m_mainLayer->addChildAtPosition(m_input, Anchor::Top,  CCPoint{0, -30});
 
     auto searchSpr = makeSprite("search.png"_spr, 1.f, "geode.loader/GE_button_05.png");
     searchSpr->setScale(.75f);
     auto searchBtn = CCMenuItemExt::createSpriteExtra(searchSpr, [this](auto) {
-	updateResults();
-	updateNodes();
+	    updateNodes();
     });
-    m_buttonMenu->addChildAtPosition(searchBtn, Anchor::Top,  CCPoint{input->getScaledContentWidth() / 2 + searchBtn->getScaledContentWidth() / 2 + 5, -30});
+    m_buttonMenu->addChildAtPosition(searchBtn, Anchor::Top,  CCPoint{m_input->getScaledContentWidth() / 2 + searchBtn->getScaledContentWidth() / 2 + 5, -30});
 
     auto filterSpr = makeSprite("GJ_filterIcon_001.png", 1.f, "geode.loader/GE_button_05.png");
     filterSpr->setScale(.75f);
     auto filterBtn = CCMenuItemExt::createSpriteExtra(filterSpr, [](auto) {
 
     });
-    m_buttonMenu->addChildAtPosition(filterBtn, Anchor::Top,  CCPoint{-input->getScaledContentWidth() / 2 - filterBtn->getScaledContentWidth() / 2 - 5, -30});
+    m_buttonMenu->addChildAtPosition(filterBtn, Anchor::Top,  CCPoint{-m_input->getScaledContentWidth() / 2 - filterBtn->getScaledContentWidth() / 2 - 5, -30});
 
-    m_scroll = CCMenu::create();
-    m_scroll->setContentSize({360, 210});
-    m_scroll->ignoreAnchorPointForPosition(false); // why does this exist, it sucks :P
-    m_mainLayer->addChildAtPosition(m_scroll, Anchor::Center, CCPoint{0, -20});
-    m_scroll->setLayout(RowLayout::create()->setGrowCrossAxis(true)->setCrossAxisAlignment(AxisAlignment::End)->setCrossAxisOverflow(false)->setGap(2));
+    m_menu = CCMenu::create();
+    m_menu->setContentSize({360, 210});
+    m_menu->ignoreAnchorPointForPosition(false); // why does this exist, it sucks :P
+    m_mainLayer->addChildAtPosition(m_menu, Anchor::Center, CCPoint{0, -20});
+    m_menu->setLayout(RowLayout::create()->setGrowCrossAxis(true)->setCrossAxisAlignment(AxisAlignment::End)->setCrossAxisOverflow(false)->setGap(2));
 
     auto scrollBg = CCLayerColor::create(ccColor4B{0,0,0,50});
     scrollBg->ignoreAnchorPointForPosition(false);
-    scrollBg->setContentSize(m_scroll->getContentSize());
+    scrollBg->setContentSize(m_menu->getContentSize());
     m_mainLayer->addChildAtPosition(scrollBg, Anchor::Center, CCPoint{0, -20});
 
     return true;
 }
 
+void IconSearchPopup::keyDown(enumKeyCodes key) {
+    if (key == KEY_Enter) {
+        updateNodes();
+        m_input->getInputNode()->onClickTrackNode(false);
+        return;
+    }
+    Popup::keyDown(key);
+}
+
 void IconSearchPopup::updateNodes() {
-    m_scroll->removeAllChildren();
+    updateResults();
+    m_menu->removeAllChildren();
     if (m_search.page * m_search.pageSize > m_results.size()) m_search.page = m_results.size() / m_search.pageSize;
     for (int i = m_search.page * m_search.pageSize; i < (m_search.page + 1) * m_search.pageSize; i++) {
         if (i >= m_results.size()) break;
@@ -90,9 +99,9 @@ void IconSearchPopup::updateNodes() {
         btn->setTag(c.id);
         sprite->setPosition({15, 15});
         btn->setContentSize({30, 30});
-        m_scroll->addChild(btn);
+        m_menu->addChild(btn);
     }
-    m_scroll->updateLayout();
+    m_menu->updateLayout();
 }
 
 inline bool isUnlockedByDefault(const int id, const IconType type) {
@@ -134,17 +143,6 @@ std::string iconTypeToString(const IconType type) {
     return "Unknown";
 }
 
-// thanks prevter for giving this code from eclipse that spaghett added
-bool matchesStringFuzzy(std::string_view haystack, std::string_view needle) {
-    auto it = std::ranges::search(
-        haystack, needle, [](char ch1, char ch2) {
-            return std::toupper(ch1) == std::toupper(ch2);
-        }
-    ).begin();
-
-    return (it != haystack.end());
-}
-
 int getResultMatch(const SearchCandidate& candidate, std::string_view search) {
     if (search.empty()) return -1;
     if (auto n = numFromString<int>(search)) {
@@ -158,6 +156,12 @@ int getResultMatch(const SearchCandidate& candidate, std::string_view search) {
 
     if (candidate.desc.starts_with(search)) // prefix desc
         return 3;
+
+    if (candidate.game == search) // exact game
+        return 4;
+
+    if (candidate.game.starts_with(search)) // prefix game
+        return 5;
 
     // fuzzy desc
     // modified code from eclipse that spaghett added (thanks prevter for sending)
@@ -176,7 +180,7 @@ int getResultMatch(const SearchCandidate& candidate, std::string_view search) {
 void IconSearchPopup::updateResults() {
     m_results.clear();
     const auto& lower = string::toLower(m_search.query);
-    for (auto candidate : m_candidates) {
+    for (const auto& candidate : m_candidates) {
         if (m_search.unlocked != std::nullopt && candidate.unlocked != m_search.unlocked) continue;
         if (!m_search.types.empty() && !std::ranges::contains(m_search.types, candidate.type)) continue;
 
@@ -192,9 +196,6 @@ void IconSearchPopup::updateResults() {
         );
 
         m_results.insert(it, { candidate, score });
-    }
-    for (auto [candidate, score] : m_results) {
-        log::info("{} {} with score {} - {} ", iconTypeToString(candidate.type), candidate.id, score, candidate.desc);
     }
 }
 
@@ -266,7 +267,13 @@ void IconSearchPopup::getCandidates() {
                  */
 
             auto achieve = am->achievementForUnlock(id, ut);
-            if (!achieve.empty()) res.howToUnlock = am->limitForAchievement(achieve);
+            if (!achieve.empty()) {
+                auto limit = am->limitForAchievement(achieve);
+                if (limit == 1) res.game = "full";
+                if (limit == 2) res.game = "world";
+                if (limit == 3) res.game = "subzero";
+                if (limit == 4) res.game = "meltdown";
+            }
 
             m_candidates.push_back(std::move(res));
         }
