@@ -22,6 +22,7 @@ struct SearchCandidate {
     std::string desc;
     bool unlocked;
     std::string game;
+    std::string achievement;
 };
 
 class IconSearchPopup : public geode::Popup<GJGarageLayer*> {

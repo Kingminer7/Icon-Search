@@ -20,6 +20,7 @@ bool IconSearchPopup::setup(GJGarageLayer* garage) {
     m_garage = garage;
     if (m_candidates.empty()) getCandidates();
     m_input = TextInput::create(280, "Search Icons...");
+    m_input->setCommonFilter(CommonFilter::Any);
     m_input->setCallback([this](auto str) {
         m_search.query = str;
     });
@@ -157,6 +158,12 @@ int getResultMatch(const SearchCandidate& candidate, std::string_view search) {
     if (candidate.desc.starts_with(search)) // prefix desc
         return 3;
 
+    if (candidate.achievement == search) // exact achievement
+	return 2;
+
+    if (candidate.achievement.starts_with(search)) // prefix achievement
+	return 3;
+
     if (candidate.game == search) // exact game
         return 4;
 
@@ -165,14 +172,23 @@ int getResultMatch(const SearchCandidate& candidate, std::string_view search) {
 
     // fuzzy desc
     // modified code from eclipse that spaghett added (thanks prevter for sending)
-    const auto it = std::ranges::search(
+    const auto descIt = std::ranges::search(
         candidate.desc, search,
         [](const char a, const char b) {
             return a == std::tolower(b);
         }
     ).begin();
-    if (it != candidate.desc.end())
-        return 10 + it - candidate.desc.begin();
+    if (descIt != candidate.desc.end())
+        return 10 + descIt - candidate.desc.begin();
+
+    const auto achIt = std::ranges::search(
+        candidate.achievement, search,
+        [](const char a, const char b) {
+            return a == std::tolower(b);
+        }
+    ).begin();
+    if (achIt != candidate.achievement.end())
+        return 10 + achIt - candidate.achievement.begin();
 
     return -1;
 }
@@ -268,6 +284,7 @@ void IconSearchPopup::getCandidates() {
 
             auto achieve = am->achievementForUnlock(id, ut);
             if (!achieve.empty()) {
+		if (auto data = static_cast<CCDictionary*>(am->m_platformAchievements->objectForKey(achieve))) res.achievement = string::toLower(data->valueForKey("title")->getCString());
                 auto limit = am->limitForAchievement(achieve);
                 if (limit == 1) res.game = "full";
                 if (limit == 2) res.game = "world";
