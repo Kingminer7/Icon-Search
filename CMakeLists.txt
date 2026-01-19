@@ -26,3 +26,6 @@ add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 
 # Set up dependencies, resources, and link Geode.
 setup_geode_mod(${PROJECT_NAME})
+
+CPMAddPackage("gh:dankmeme01/cue#ae3ee0b") # prefer a specific commit over main
+target_link_libraries(${PROJECT_NAME} cue)

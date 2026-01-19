@@ -1,6 +1,9 @@
 #include "IconSearchPopup.hpp"
 
+#include <algorithm>
 #include <utility>
+#include <cue/PlayerIcon.hpp>
+#include <cue/DropdownNode.hpp>
 
 using namespace geode::prelude;
 
@@ -92,6 +95,8 @@ bool IconSearchPopup::setup(GJGarageLayer* garage) {
     static_cast<CCSprite*>(m_next->getNormalImage())->setFlipX(true);
     m_buttonMenu->addChildAtPosition(m_next, Anchor::Center, {220, -15});
 
+    updateNodes();
+
     return true;
 }
 
@@ -156,27 +161,32 @@ void IconSearchPopup::updateNodes() {
                 break;
             }
             case IconType::Item: {
-                log::info("{}", i);
-                if (i > 6 && i < 16) {
-                    sprite = GJPathSprite::create(i);
-                    break;
+                if (c.id > 5 && c.id < 16) {
+                    sprite = GJPathSprite::create(c.id - 5);
+		    break;
                 }
                 sprite = CCSprite::createWithSpriteFrameName(fmt::format("gjItem_{:02}_001.png", c.id).c_str());
-                break;
+		break;
             }
             case IconType::ShipFire: {
                 sprite = CCSprite::createWithSpriteFrameName(fmt::format("shipfireIcon_{:02}_001.png", c.id).c_str());
-                break;
+		break;
             }
             default: {
-                auto is = SimplePlayer::create(0);
-                is->setScale(.8);
-                is->updatePlayerFrame(c.id, c.type);
-                is->setColors(gm->colorForIdx(gm->getPlayerColor()), gm->colorForIdx(gm->getPlayerColor2()));
+                auto is = cue::PlayerIcon::create({
+		    .type = c.type,
+		    .id = c.id,
+		    .color1 = gm->getPlayerColor(),
+		    .color2 = gm->getPlayerColor2(),
+		});
                 sprite = is;
             }
         }
-        auto btn = CCMenuItemSpriteExtra::create(sprite, m_garage, menu_selector(GJGarageLayer::onSelect));
+	sprite->setScale(30 / std::max(sprite->getContentHeight(), sprite->getContentWidth()));
+        auto btn = CCMenuItemExt::createSpriteExtra(sprite, [this, gm, c](auto){
+		// TODO: Implement more like vanilla
+		ItemInfoPopup::create(c.id, gm->iconTypeToUnlockType(c.type))->show();
+	});
         btn->m_iconType = c.type;
         btn->setTag(c.id);
         sprite->setPosition({15, 15});
@@ -198,7 +208,7 @@ inline bool isUnlockedByDefault(const int id, const IconType type) {
 }
 
 int getResultMatch(const SearchCandidate& candidate, std::string_view search) {
-    if (search.empty()) return -1;
+    if (search.empty()) return 0;
     if (auto n = numFromString<int>(search)) {
         const int id = n.unwrap();
         if (id == candidate.id) return 0; // exact num
@@ -208,41 +218,41 @@ int getResultMatch(const SearchCandidate& candidate, std::string_view search) {
     if (candidate.name == search) // exact name
         return 2;
 
-    if (candidate.desc == search) // exact desc
-        return 2;
-
-    if (candidate.achievement == search) // exact achievement
-        return 2;
-
     if (candidate.name.starts_with(search)) // prefix name
         return 3;
 
+    if (candidate.desc == search) // exact desc
+        return 29;
+
     if (candidate.desc.starts_with(search)) // prefix desc
-        return 3;
+        return 30;
+
+    if (candidate.achievement == search) // exact achievement
+        return 36;
 
     if (candidate.achievement.starts_with(search)) // prefix achievement
-        return 3;
+        return 37;
 
     if (candidate.game == search) // exact game
-        return 4;
+        return 63;
 
     if (candidate.game.starts_with(search)) // prefix game
-        return 5;
+        return 64;
 
     // fuzzy desc
     // modified code from eclipse that spaghett added (thanks prevter for sending)
-#define fuzzy(type) const auto type##It = std::ranges::search( \
+#define fuzzy(type, bonus) const auto type##It = std::ranges::search( \
     candidate.type, search, \
     [](const char a, const char b) { \
         return a == std::tolower(b); \
     } \
     ).begin(); \
     if (type##It != candidate.type.end()) \
-        return 10 + type##It - candidate.type.begin();
+        return bonus + type##It - candidate.type.begin();
 
-    fuzzy(name)
-    fuzzy(desc)
-    fuzzy(achievement)
+    fuzzy(name, 4)
+    fuzzy(desc, 31)
+    fuzzy(achievement, 38)
 
 #undef fuzzy
 
@@ -274,12 +284,12 @@ void IconSearchPopup::updateResults() {
 void IconSearchPopup::getCandidates() {
     m_candidates.clear();
     auto gm = GameManager::sharedState();
-    // for (IconType type : {IconType::Cube, IconType::Ship, IconType::Ball, IconType::Ufo, IconType::Wave, IconType::Robot, IconType::Spider, IconType::Swing, IconType::Jetpack, IconType::DeathEffect, IconType::Special, IconType::ShipFire}) {
-    //     auto count = gm->countForType(type);
-    //     for (int id = 1; id <= count; id++) {
-    //         checkCandidate(type, id);
-    //     }
-    // }
+    for (IconType type : {IconType::Cube, IconType::Ship, IconType::Ball, IconType::Ufo, IconType::Wave, IconType::Robot, IconType::Spider, IconType::Swing, IconType::Jetpack, IconType::DeathEffect, IconType::Special, IconType::ShipFire}) {
+        auto count = gm->countForType(type);
+        for (int id = 1; id <= count; id++) {
+            addCandidate(type, id);
+        }
+    }
     for (int i = 1; i <= 20; i++) {
         addCandidate(IconType::Item, i);
     }
@@ -294,7 +304,7 @@ void IconSearchPopup::addCandidate(IconType type, int id) {
     auto res = SearchCandidate{
         .type = type,
         .id = id,
-        .unlocked = gm->isIconUnlocked(id, type),
+        .unlocked = type == IconType::Item ? gsm->isItemUnlocked(ut, id) : gm->isIconUnlocked(id, type),
         .name = string::toLower(ItemInfoPopup::nameForUnlockType(id, ut)),
     };
 
@@ -377,37 +387,98 @@ bool IconSearchFilterPopup::setup(IconSearchPopup* parent) {
     m_buttonMenu->setID("button-menu");
     CCMenu* typeMenu = CCMenu::create();
     typeMenu->setContentSize({200, 30});
-    typeMenu->setLayout(
-        RowLayout::create()->setGrowCrossAxis(true)->setCrossAxisAlignment(AxisAlignment::End)->
-                             setCrossAxisOverflow(true)->setGap(2));
-    for (auto [type, str] : std::vector<std::pair<IconType, std::string>>{
-             {IconType::Cube, "icon"},
-             {IconType::Ship, "ship"},
-             {IconType::Ball, "ball"},
-             {IconType::Ufo, "bird"},
-             {IconType::Wave, "dart"},
-             {IconType::Robot, "robot"},
-             {IconType::Spider, "spider"},
-             {IconType::Swing, "swing"},
-             {IconType::Jetpack, "jetpack"},
-             {IconType::DeathEffect, "explosion"},
-             {IconType::Special, "streak"},
-             {IconType::ShipFire, "streak"},
-             {IconType::Item, "streak"},
+    typeMenu->setLayout(RowLayout::create()
+	->setGrowCrossAxis(true)
+	->setCrossAxisAlignment(AxisAlignment::End)
+	->setCrossAxisOverflow(true)
+	->setGap(2));
+    for (auto [type, has, str, sheet] : std::vector<std::tuple<IconType, bool, std::string, bool>>{
+             {IconType::Cube, true, "icon", true},
+             {IconType::Ship, true, "ship", true},
+             {IconType::Ball, true, "ball", true},
+             {IconType::Ufo, true, "bird", true},
+             {IconType::Wave, true, "dart", true},
+             {IconType::Robot, true, "robot", true},
+             {IconType::Spider, true, "spider", true},
+             {IconType::Swing, true, "swing", true},
+             {IconType::Jetpack, true, "jetpack", true},
+             {IconType::DeathEffect, true, "explosion", true},
+             {IconType::Special, true, "streak", true},
+             {IconType::ShipFire, false, "shipfire03_002.png", false},
+             {IconType::Item, false, "gjItem_04_001.png", true},
          }) {
-        auto btn = CCMenuItemExt::createTogglerWithFrameName(fmt::format("gj_{}Btn_on_001.png", str),
-                                                             fmt::format("gj_{}Btn_off_001.png", str), 1.f,
-                                                             [](auto) {});
-        typeMenu->addChild(btn);
+        CCMenuItemToggler* btn;
+	auto cb = [this, parent, type](CCMenuItemToggler* btn){
+		if (!btn->isOn()) parent->m_search.types.push_back(type);
+		else std::erase(parent->m_search.types, type);
+	};
+	if (has) btn = CCMenuItemExt::createTogglerWithFrameName(fmt::format("gj_{}Btn_on_001.png", str), fmt::format("gj_{}Btn_off_001.png", str), .8f, cb);
+	else {
+		CCSprite* gs1;
+		CCSprite* gs2;
+		if (sheet) {
+		 	gs1 = CCSpriteGrayscale::createWithSpriteFrameName(str);
+			gs2 = CCSpriteGrayscale::createWithSpriteFrameName(str);
+		} else {
+			gs1 = CCSpriteGrayscale::create(str);
+			gs2 = CCSpriteGrayscale::create(str);
+		}
+		auto s1 = IconSelectButtonSprite::create(gs1, IconSelectBaseColor::Selected);
+		auto s2 = IconSelectButtonSprite::create(gs2, IconSelectBaseColor::Unselected);
+		gs1->setScale(gs1->getScale() * 1.25);
+		gs2->setScale(gs2->getScale() * 1.25);
+
+		s1->setScale(.8);
+		s2->setScale(.8);
+		btn = CCMenuItemExt::createToggler(s1, s2, cb);
+	}
+	if (std::ranges::contains(parent->m_search.types, type)) btn->toggle(true);
+        typeMenu->addChild(btn);	
     }
     typeMenu->updateLayout();
 
-    m_mainLayer->addChildAtPosition(typeMenu, Anchor::Center, {0, 20});
+    auto drop = cue::DropdownNode::create(ccColor4B{0, 0, 0, 60}, 120, 20, 40);
+    drop->setAnchorPoint({.5f, 1.f});
+    static auto makeLabel = [](const char* text){
+	auto lab = CCLabelBMFont::create(text, "bigFont.fnt");
+	lab->setScale(.6f);
+	return lab;
+    };
+    auto all = makeLabel("All");
+    auto yes = makeLabel("Unlocked");
+    auto no = makeLabel("Locked");
+    if (parent->m_search.unlocked == std::nullopt) {
+	drop->addCell(all);
+	drop->addCell(yes);
+	drop->addCell(no);
+    } else if (parent->m_search.unlocked == true) {
+	drop->addCell(yes);
+	drop->addCell(all);
+	drop->addCell(no);
+    } else {
+	drop->addCell(no);
+	drop->addCell(all);
+	drop->addCell(yes);
+    }
+    
+    drop->setCallback([parent, all, yes](auto, CCNode* node) {
+	if (node == all) parent->m_search.unlocked = std::nullopt;
+	else parent->m_search.unlocked = node == yes;
+    });
+
+    m_mainLayer->addChildAtPosition(drop, Anchor::Center, {0, 0});
+    m_mainLayer->addChildAtPosition(typeMenu, Anchor::Center, {0, 35});
+    m_parent = parent;
     return true;
 }
 
 IconSearchFilterPopup* IconSearchFilterPopup::create(IconSearchPopup* parent) {
     auto ret = new IconSearchFilterPopup();
-    if (ret->initAnchored(250, 200, parent, "geode.loader/GE_square02.png")) return ret->autorelease(), ret;
+    if (ret->initAnchored(250, 150, parent, "geode.loader/GE_square02.png")) return ret->autorelease(), ret;
     return delete ret, ret;
+}
+
+void IconSearchFilterPopup::onClose(CCObject* sender) {
+	Popup::onClose(sender);
+	m_parent->updateNodes();
 }

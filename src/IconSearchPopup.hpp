@@ -52,8 +52,10 @@ public:
 
 class IconSearchFilterPopup : public geode::Popup<IconSearchPopup*> {
 protected:
-    bool setup(IconSearchPopup* parent);
+    bool setup(IconSearchPopup* parent) override;
+    void onClose(CCObject* sender) override;
 
+    IconSearchPopup* m_parent = nullptr;
 public:
     static IconSearchFilterPopup* create(IconSearchPopup* parent);
 };
