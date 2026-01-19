@@ -209,11 +209,9 @@ inline bool isUnlockedByDefault(const int id, const IconType type) {
 
 int getResultMatch(const SearchCandidate& candidate, std::string_view search) {
     if (search.empty()) return 0;
-    if (auto n = numFromString<int>(search)) {
-        const int id = n.unwrap();
-        if (id == candidate.id) return 0; // exact num
-        if (numToString(id).starts_with(search)) return 1; // prefix num
-    }
+    const auto idStr = numToString(candidate.id);
+    if (idStr == search) return 0; // exact num
+    if (idStr.starts_with(search)) return 1; // prefix num
 
     if (candidate.name == search) // exact name
         return 2;
