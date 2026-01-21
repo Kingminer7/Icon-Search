@@ -14,7 +14,7 @@ class $modify(MyGJGarageLayer, GJGarageLayer) {
 		auto myButton = CCMenuItemExt::createSpriteExtra(spr, [this](auto){
 			IconSearchPopup::create(this)->show();
 		});
-	    myButton->setID("my-button"_spr);
+	    myButton->setID("search-button"_spr);
 
 		auto menu = this->getChildByID("category-menu");
 		menu->addChild(myButton);
