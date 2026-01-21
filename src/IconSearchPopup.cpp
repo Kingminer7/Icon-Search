@@ -297,7 +297,6 @@ void IconSearchPopup::updateNodes() {
             lock->setID("lock-sprite");
             lock->setZOrder(1);
             btn->addChildAtPosition(lock, Anchor::Center, {0, 0}, false);
-            sprite->setColor({150, 150, 150});
         }
         m_menu->addChild(btn);
     }
