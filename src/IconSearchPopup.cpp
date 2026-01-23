@@ -369,11 +369,6 @@ void IconSearchPopup::updateNodes() {
                         spr->removeFromParentAndCleanup(false);
                         btn->addChildAtPosition(spr, Anchor::Center, {0, 0}, false);
                         spr->release();
-                        if (m_garage->m_selectedIconType == c.type) {
-
-                        } else if (m_garage->m_selectedIconType == IconType::Special && c.type == IconType::ShipFire) {
-                            
-                        }
                     } else {
                         spr = CCSprite::createWithSpriteFrameName("GJ_select_001.png");
                         spr->setID(iconTypeToString(c.type) + "-select-sprite");
@@ -397,9 +392,15 @@ void IconSearchPopup::updateNodes() {
                             case IconType::Jetpack:
                                 m_garage->m_playerObject->updatePlayerFrame(c.id, c.type);
                                 gm->m_playerIconType = c.type;
+                                m_garage->m_selectedIconType = c.type;
                                 break;
                             default: break;
                         }
+                    }
+                    // this is to sync up the vanilla cursor icon(s)
+                    if (const auto tabBtn = static_cast<CCMenuItemToggler*>(m_garage->getChildByID("category-menu")->getChildByTag(static_cast<int>(m_garage->m_iconType)))) {
+                        tabBtn->setEnabled(true);
+                        tabBtn->activate();
                     }
                 }
 
