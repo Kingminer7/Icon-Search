@@ -1,36 +1,36 @@
 {
-	"geode": "5.0.0-alpha.1",
-	"gd": {
-		"win": "2.208",
-		"android": "2.208",
-		"mac": "2.208",
-		"ios": "2.208"
-	},
-	"id": "km7dev.icon_search",
-	"name": "Icon Search",
-	"version": "v1.0.0",
-	"developer": "km7dev",
-	"description": "",
-	"dependencies": {
-		"geode.node-ids": ">=v1.20.0",
-		"hiimjustin000.more_icons": {
-			"importance": "suggested",
-			"version": ">=1.16.2"
-		}
-	},
-	"resources": {
-		"spritesheets": {
-			"IconSpritesSheet": [
-				"res/*.png"
-			]
-		}
-	},
-	"settings": {
-		"icon-hack": {
-			"type": "bool",
-			"name": "Icon Hack",
-			"description": "Unlocks all icons <co>in the search menu</c>. This does NOT apply to the regular icon kit.",
-			"default": false
-		}
-	}
+    "geode": "5.0.0-alpha.1",
+    "gd": {
+        "win": "2.2081",
+        "android": "2.2081",
+        "mac": "2.2081",
+        "ios": "2.2081"
+    },
+    "id": "km7dev.icon_search",
+    "name": "Icon Search",
+    "version": "v1.0.0",
+    "developer": "km7dev",
+    "description": "",
+    "dependencies": {
+        "geode.node-ids": ">=v1.20.0",
+        "hiimjustin000.more_icons": {
+            "importance": "suggested",
+            "version": ">=1.16.2"
+        }
+    },
+    "resources": {
+        "spritesheets": {
+            "IconSpritesSheet": [
+                "res/*.png"
+            ]
+        }
+    },
+    "settings": {
+        "icon-hack": {
+            "type": "bool",
+            "name": "Icon Hack",
+            "description": "Unlocks all icons <co>in the search menu</c>. This does NOT apply to the regular icon kit.",
+            "default": false
+        }
+    }
 }

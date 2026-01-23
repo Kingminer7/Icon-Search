@@ -40,11 +40,20 @@ bool SearchResult::isUnlocked() const {
     return gm->isIconUnlocked(id, type);
 }
 
+#define replaceCloseBtn(btn) { \
+    btn->m_pNormalImage->removeFromParent(); \
+    auto newClose = CircleButtonSprite::createWithSpriteFrameName("geode.loader/close.png", .85f, CircleBaseColor::DarkPurple, CircleBaseSize::Medium); \
+    newClose->setScale(.8f); \
+    btn->m_pNormalImage = newClose; \
+    btn->addChildAtPosition(newClose, Anchor::Center, {0, 0}, false); \
+}
+
 bool IconSearchPopup::setup(GJGarageLayer* garage) {
     setID("IconSearchPopup");
     m_bgSprite->setZOrder(-2);
     m_bgSprite->setID("background");
     m_closeBtn->setID("close-btn");
+    replaceCloseBtn(m_closeBtn);
     m_buttonMenu->setID("button-menu");
 
     m_garage = garage;
@@ -75,7 +84,7 @@ bool IconSearchPopup::setup(GJGarageLayer* garage) {
 
     m_menu = CCMenu::create();
     m_menu->setID("search-menu");
-    m_menu->setContentSize({360, 210});
+    m_menu->setContentSize({355, 205});
     m_menu->ignoreAnchorPointForPosition(false); // why does this exist, it sucks :P
     m_mainLayer->addChildAtPosition(m_menu, Anchor::Center, CCPoint{0, -20});
     m_menu->setLayout(RowLayout::create()
@@ -88,7 +97,7 @@ bool IconSearchPopup::setup(GJGarageLayer* garage) {
     bg->setID("search-bg");
     bg->setZOrder(-1);
     bg->setOpacity(72);
-    bg->setContentSize(m_menu->getContentSize());
+    bg->setContentSize(m_menu->getContentSize() + CCSize{5, 5});
     m_mainLayer->addChildAtPosition(bg, Anchor::Center, CCPoint{0, -20});
 
     m_prev = CCMenuItemExt::createSpriteExtraWithFrameName("GJ_arrow_02_001.png", 1.f, [this](auto) {
@@ -154,11 +163,91 @@ std::string iconTypeToString(const IconType type) {
     return "Unknown";
 }
 
+inline std::map<IconType, std::pair<int, std::string>> selectedIcons() {
+    std::map<IconType, std::pair<int, std::string>> res = {};
+    auto gm = GameManager::get();
+
+    if (auto miSel = more_icons::activeIcon(IconType::Cube); !miSel.empty()) {
+        res.insert({IconType::Cube, {-1, miSel}});
+    } else {
+        res.insert({IconType::Cube, {gm->m_playerFrame, ""}});
+    }
+
+    if (auto miSel = more_icons::activeIcon(IconType::Ship); !miSel.empty()) {
+        res.insert({IconType::Ship, {-1, miSel}});
+    } else {
+        res.insert({IconType::Ship, {gm->m_playerShip, ""}});
+    }
+
+    if (auto miSel = more_icons::activeIcon(IconType::Ball); !miSel.empty()) {
+        res.insert({IconType::Ball, {-1, miSel}});
+    } else {
+        res.insert({IconType::Ball, {gm->m_playerBall, ""}});
+    }
+
+    if (auto miSel = more_icons::activeIcon(IconType::Ufo); !miSel.empty()) {
+        res.insert({IconType::Ufo, {-1, miSel}});
+    } else {
+        res.insert({IconType::Ufo, {gm->m_playerBird, ""}});
+    }
+
+    if (auto miSel = more_icons::activeIcon(IconType::Wave); !miSel.empty()) {
+        res.insert({IconType::Wave, {-1, miSel}});
+    } else {
+        res.insert({IconType::Wave, {gm->m_playerDart, ""}});
+    }
+    if (auto miSel = more_icons::activeIcon(IconType::Robot); !miSel.empty()) {
+        res.insert({IconType::Robot, {-1, miSel}});
+    } else {
+        res.insert({IconType::Robot, {gm->m_playerRobot, ""}});
+    }
+
+    if (auto miSel = more_icons::activeIcon(IconType::Spider); !miSel.empty()) {
+        res.insert({IconType::Spider, {-1, miSel}});
+    } else {
+        res.insert({IconType::Spider, {gm->m_playerSpider, ""}});
+    }
+
+    if (auto miSel = more_icons::activeIcon(IconType::Swing); !miSel.empty()) {
+        res.insert({IconType::Swing, {-1, miSel}});
+    } else {
+        res.insert({IconType::Swing, {gm->m_playerSwing, ""}});
+    }
+
+    if (auto miSel = more_icons::activeIcon(IconType::Special); !miSel.empty()) {
+        res.insert({IconType::Special, {-1, miSel}});
+    } else {
+        res.insert({IconType::Special, {gm->m_playerStreak, ""}});
+    }
+
+    if (auto miSel = more_icons::activeIcon(IconType::DeathEffect); !miSel.empty()) {
+        res.insert({IconType::DeathEffect, {-1, miSel}});
+    } else {
+        res.insert({IconType::DeathEffect, {gm->m_playerDeathEffect, ""}});
+    }
+
+    if (auto miSel = more_icons::activeIcon(IconType::ShipFire); !miSel.empty()) {
+        res.insert({IconType::ShipFire, {-1, miSel}});
+    } else {
+        res.insert({IconType::ShipFire, {gm->m_playerShipFire, ""}});
+    }
+
+    if (auto miSel = more_icons::activeIcon(IconType::Jetpack); !miSel.empty()) {
+        res.insert({IconType::Jetpack, {-1, miSel}});
+    } else {
+        res.insert({IconType::Jetpack, {gm->m_playerJetpack, ""}});
+    }
+
+    return res;
+}
+
 void IconSearchPopup::updateNodes() {
     updateResults();
     m_menu->removeAllChildren();
+    m_selectIcons.clear();
     if (m_search.page < 0) m_search.page = 0;
     if (m_search.page * m_search.pageSize > m_results.size()) m_search.page = m_results.size() / m_search.pageSize;
+    const auto& sel = selectedIcons();
     for (int i = m_search.page * m_search.pageSize; i < (m_search.page + 1) * m_search.pageSize; i++) {
         if (i >= m_results.size()) break;
         auto c = m_results[i].first;
@@ -170,18 +259,22 @@ void IconSearchPopup::updateNodes() {
                 } else {
                     sprite = CCSprite::create(c.moreIconsInfo->textures[0].c_str());
                 }
+                sprite->setScale(.9f);
                 break;
             }
             case IconType::DeathEffect: {
                 sprite = CCSprite::createWithSpriteFrameName(fmt::format("explosionIcon_{:02}_001.png", c.id).c_str());
+                sprite->setScale(.9f);
                 break;
             }
             case IconType::Item: {
                 if (c.id > 5 && c.id < 16) {
                     sprite = GJPathSprite::create(c.id - 5);
+                    sprite->setScale(30 / std::max(sprite->getContentHeight(), sprite->getContentWidth()));
                     break;
                 }
                 sprite = CCSprite::createWithSpriteFrameName(fmt::format("gjItem_{:02}_001.png", c.id).c_str());
+                sprite->setScale(30 / std::max(sprite->getContentHeight(), sprite->getContentWidth()));
                 break;
             }
             case IconType::ShipFire: {
@@ -199,17 +292,26 @@ void IconSearchPopup::updateNodes() {
                     more_icons::updateSimplePlayer(is, c.moreIconsInfo->name, c.type);
                     is->m_firstLayer->setPosition(is->getContentSize() / 2);
                 }
+                if (c.type == IconType::Ship || c.type == IconType::Robot || c.type == IconType::Spider || c.type == IconType::Jetpack) {
+                    is->setScale(.65f);
+                } else if (c.type == IconType::Ufo) {
+                    is->m_firstLayer->setPosition(CCPoint{is->m_firstLayer->getPositionX(), 7.75});
+                    is->setScale(.75);
+                } else if (c.type == IconType::Swing) {
+                    is->setScale(.75f);
+                } else {
+                    is->setScale(.85f);
+                }
                 sprite = is;
             }
         }
-        sprite->setScale(30 / std::max(sprite->getContentHeight(), sprite->getContentWidth()));
-        auto btn = CCMenuItemExt::createSpriteExtra(sprite, [this, c](auto) {
+        auto btn = CCMenuItemExt::createSpriteExtra(sprite, [this, c](auto btn) {
             if (c.moreIconsInfo != std::nullopt) {
                 if (more_icons::activeIcon(c.type) == c.moreIconsInfo->name) more_icons::createInfoPopup(c.name, c.type)->show();
                 else more_icons::setIcon(c.moreIconsInfo->name, c.type);
             } else {
                 auto gm = GameManager::get();
-                if (!gm->isIconUnlocked(c.id, c.type) && !getSettingFast<"icon-hack", bool>()) return ItemInfoPopup::create(c.id, GameManager::get()->iconTypeToUnlockType(c.type))->show();
+                if (!c.isUnlocked() && !getSettingFast<"icon-hack", bool>()) return ItemInfoPopup::create(c.id, GameManager::get()->iconTypeToUnlockType(c.type))->show();
                 if (more_icons::activeIcon(c.type).empty()) {
                     SeedValueRSV* member = nullptr;
                     switch (c.type) {
@@ -262,6 +364,23 @@ void IconSearchPopup::updateNodes() {
                         po->show();
                         return;
                     }
+                    if (auto spr = m_selectIcons[c.type]) {
+                        spr->retain();
+                        spr->removeFromParentAndCleanup(false);
+                        btn->addChildAtPosition(spr, Anchor::Center, {0, 0}, false);
+                        spr->release();
+                        if (m_garage->m_selectedIconType == c.type) {
+
+                        } else if (m_garage->m_selectedIconType == IconType::Special && c.type == IconType::ShipFire) {
+                            
+                        }
+                    } else {
+                        spr = CCSprite::createWithSpriteFrameName("GJ_select_001.png");
+                        spr->setID(iconTypeToString(c.type) + "-select-sprite");
+                        spr->setScale(.9f);
+                        btn->addChildAtPosition(spr, Anchor::Center, {0, 0}, false);
+                        m_selectIcons[c.type] = spr;
+                    }
                     if (*member == c.id) {
                         ItemInfoPopup::create(c.id, GameManager::get()->iconTypeToUnlockType(c.type))->show();
                     } else {
@@ -291,14 +410,24 @@ void IconSearchPopup::updateNodes() {
         sprite->setPosition({15, 15});
         btn->setContentSize({30, 30});
         btn->setID(fmt::format("{}-{}", iconTypeToString(c.type), c.id));
-        if (!c.isUnlocked()) {
+        if (!c.isUnlocked() && !getSettingFast<"icon-hack", bool>()) {
             auto lock = CCSprite::createWithSpriteFrameName("GJ_lockGray_001.png");
             lock->setScale(.8f);
+            lock->setOpacity(200);
             lock->setID("lock-sprite");
             lock->setZOrder(1);
             btn->addChildAtPosition(lock, Anchor::Center, {0, 0}, false);
         }
         m_menu->addChild(btn);
+        if (c.type == IconType::Item) continue;
+        auto p = sel.at(c.type);
+        if ((c.moreIconsInfo != std::nullopt && p.second == c.moreIconsInfo->name) || (c.moreIconsInfo == std::nullopt && c.id == p.first)) {
+            auto spr = CCSprite::createWithSpriteFrameName("GJ_select_001.png");
+            spr->setID(iconTypeToString(c.type) + "-select-sprite");
+            spr->setScale(.9f);
+            btn->addChildAtPosition(spr, Anchor::Center, {0, 0}, false);
+            m_selectIcons.insert({c.type, spr});
+        }
     }
     m_menu->updateLayout();
 
@@ -540,6 +669,7 @@ bool IconSearchFilterPopup::setup(IconSearchPopup* parent) {
     setID("IconSearchPopup");
     m_bgSprite->setID("background");
     m_closeBtn->setID("close-btn");
+    replaceCloseBtn(m_closeBtn);
     m_buttonMenu->setID("button-menu");
     CCMenu* typeMenu = CCMenu::create();
     typeMenu->setContentSize({200, 30});

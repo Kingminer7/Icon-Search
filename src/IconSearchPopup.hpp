@@ -27,7 +27,7 @@ struct SearchResult {
     std::string achievement;
     std::string name;
     std::optional<IconInfo> moreIconsInfo = std::nullopt;
-    bool isUnlocked() const;
+    [[nodiscard]] bool isUnlocked() const;
 };
 
 class IconSearchPopup : public geode::Popup<GJGarageLayer*> {
@@ -43,6 +43,7 @@ protected:
     geode::TextInput* m_input = nullptr;
     CCMenuItemSpriteExtra* m_prev = nullptr;
     CCMenuItemSpriteExtra* m_next = nullptr;
+    std::map<IconType, cocos2d::CCSprite*> m_selectIcons = {};
 public:
     void updateNodes();
     void updateResults();
