@@ -62,6 +62,7 @@
             build-config: ${{ matrix.target == 'Win64' && 'RelWithDebInfo' || ( github.event.inputs.build_type != 'release' && 'Debug' || 'Release' ) }}
             export-pdb: true
             export-symbols: true
+            sdk: nightly
             target: ${{ matrix.config.target }}
 
     package:
