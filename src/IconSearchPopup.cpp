@@ -48,7 +48,8 @@ bool SearchResult::isUnlocked() const {
     btn->addChildAtPosition(newClose, Anchor::Center, {0, 0}, false); \
 }
 
-bool IconSearchPopup::setup(GJGarageLayer* garage) {
+bool IconSearchPopup::init(GJGarageLayer* garage) {
+    if (!Popup::init(400, 280, "geode.loader/GE_square02.png")) return false;
     setID("IconSearchPopup");
     m_bgSprite->setZOrder(-2);
     m_bgSprite->setID("background");
@@ -662,11 +663,12 @@ void IconSearchPopup::addCandidate(IconType type, int id) {
 
 IconSearchPopup* IconSearchPopup::create(GJGarageLayer* garage) {
     auto ret = new IconSearchPopup();
-    if (ret->initAnchored(400, 280, garage, "geode.loader/GE_square02.png")) return ret->autorelease(), ret;
+    if (ret->init(garage)) return ret->autorelease(), ret;
     return delete ret, ret;
 }
 
-bool IconSearchFilterPopup::setup(IconSearchPopup* parent) {
+bool IconSearchFilterPopup::init(IconSearchPopup* parent) {
+    if (!Popup::init(250, 150, "geode.loader/GE_square02.png")) return false;
     setID("IconSearchPopup");
     m_bgSprite->setID("background");
     m_closeBtn->setID("close-btn");
@@ -765,7 +767,7 @@ bool IconSearchFilterPopup::setup(IconSearchPopup* parent) {
 
 IconSearchFilterPopup* IconSearchFilterPopup::create(IconSearchPopup* parent) {
     auto ret = new IconSearchFilterPopup();
-    if (ret->initAnchored(250, 150, parent, "geode.loader/GE_square02.png")) return ret->autorelease(), ret;
+    if (ret->init(parent)) return ret->autorelease(), ret;
     return delete ret, ret;
 }
 

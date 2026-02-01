@@ -30,12 +30,11 @@ struct SearchResult {
     [[nodiscard]] bool isUnlocked() const;
 };
 
-class IconSearchPopup : public geode::Popup<GJGarageLayer*> {
+class IconSearchPopup : public geode::Popup {
 protected:
-    bool setup(GJGarageLayer* garage) override;
+    bool init(GJGarageLayer* garage);
     void keyDown(cocos2d::enumKeyCodes key, double ts) override;
 
-    // cause getting all this info might be laggy, id rather do it once
     std::vector<SearchResult> m_candidates;
     std::vector<std::pair<SearchResult, int>> m_results;
     GJGarageLayer* m_garage = nullptr;
@@ -57,9 +56,9 @@ public:
     Search m_search;
 };
 
-class IconSearchFilterPopup : public geode::Popup<IconSearchPopup*> {
+class IconSearchFilterPopup : public geode::Popup {
 protected:
-    bool setup(IconSearchPopup* parent) override;
+    bool init(IconSearchPopup* parent);
     void onClose(CCObject* sender) override;
 
     IconSearchPopup* m_parent = nullptr;
