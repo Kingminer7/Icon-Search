@@ -1,4 +1,5 @@
 #include "IconSearchPopup.hpp"
+#include "Geode/loader/Loader.hpp"
 
 #include <algorithm>
 #include <utility>
@@ -399,10 +400,14 @@ void IconSearchPopup::updateNodes() {
                         }
                     }
                     // this is to sync up the vanilla cursor icon(s)
-                    if (const auto tabBtn = static_cast<CCMenuItemToggler*>(m_garage->getChildByID("category-menu")->getChildByTag(static_cast<int>(m_garage->m_iconType)))) {
-                        tabBtn->setEnabled(true);
-                        tabBtn->activate();
-                    }
+                    auto type = m_garage->m_iconType;
+                    m_garage->selectTab(type);
+                    // we love touch prio weirdness
+                    queueInMainThread([this]{
+                        if (auto handler = CCTouchDispatcher::get()->findHandler(m_garage->m_iconSelection->m_scrollLayer->m_extendedLayer->getChildByIndex(0)->getChildByType<cocos2d::CCMenu>(0))) {
+                            CCTouchDispatcher::get()->setPriority(-128, handler->getDelegate());
+                        }
+                    });
                 }
 
             }
