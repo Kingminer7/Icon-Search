@@ -1,23 +1,17 @@
-# IconSearch
-This is where she makes a mod.
+# Icon Search
 
-<img src="logo.png" width="150" alt="the mod's logo" />
+Trying to find an icon fast? Well now you can search for it! Open up the icon kit and click the search button on the far right side of the category buttons, and search.
 
-*Update logo.png to change your mod's icon (please)*
+You can search by:
+- Icon ID
+- Icon type
+- Icon description (from the item info popup)
+- Achievement name
+- Achievement description
+- The spinoff game it came from
+- A list of keywords an icon may be known by
 
-## Getting started
-We recommend heading over to [the getting started section on our docs](https://docs.geode-sdk.org/getting-started/) for useful info on what to do next.
+And yes, it has support for [More Icons](mod:hiimjustin000.more_icons).
 
-## Build instructions
-For more info, see [our docs](https://docs.geode-sdk.org/getting-started/create-mod#build)
-```sh
-# Assuming you have the Geode CLI set up already
-geode build
-```
-
-# Resources
-* [Geode SDK Documentation](https://docs.geode-sdk.org/)
-* [Geode SDK Source Code](https://github.com/geode-sdk/geode/)
-* [Geode CLI](https://github.com/geode-sdk/cli)
-* [Bindings](https://github.com/geode-sdk/bindings/)
-* [Dev Tools](https://github.com/geode-sdk/DevTools)
+TODO:
+- search popular keywords

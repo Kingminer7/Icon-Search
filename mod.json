@@ -10,7 +10,7 @@
     "name": "Icon Search",
     "version": "v1.0.0",
     "developer": "km7dev",
-    "description": "",
+    "description": "Search for icons",
     "dependencies": {
         "geode.node-ids": ">=v1.20.0",
         "hiimjustin000.more_icons": {
@@ -32,5 +32,9 @@
             "description": "Unlocks all icons <co>in the search menu</c>. This does NOT apply to the regular icon kit.",
             "default": false
         }
-    }
+    },
+    "links": {
+        "source": "https://github.com/kingminer7/icon-search"
+    },
+    "tags": ["utility"]
 }
