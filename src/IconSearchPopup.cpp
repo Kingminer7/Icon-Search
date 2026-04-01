@@ -36,7 +36,7 @@ CCSprite* makeSprite(const std::string& topName, const float topScale, const std
 bool SearchResult::isUnlocked() const {
     const auto gsm = GameStatsManager::get();
     const auto gm = GameManager::get();
-    if (moreIconsInfo != std::nullopt) return true;
+    if (isMoreIcons) return true;
     if (type == IconType::Item) return gsm->isItemUnlocked(gm->iconTypeToUnlockType(type), id);
     return gm->isIconUnlocked(id, type);
 }
@@ -165,79 +165,79 @@ std::string iconTypeToString(const IconType type) {
     return "Unknown";
 }
 
-inline std::map<IconType, std::pair<int, std::string>> selectedIcons() {
-    std::map<IconType, std::pair<int, std::string>> res = {};
+inline std::map<IconType, std::pair<int, IconInfo*>> selectedIcons() {
+    std::map<IconType, std::pair<int, IconInfo*>> res = {};
     auto gm = GameManager::get();
 
-    if (auto miSel = more_icons::activeIcon(IconType::Cube); !miSel.empty()) {
+    if (auto miSel = more_icons::activeIcon(IconType::Cube)) {
         res.insert({IconType::Cube, {-1, miSel}});
     } else {
-        res.insert({IconType::Cube, {gm->m_playerFrame, ""}});
+        res.insert({IconType::Cube, {gm->m_playerFrame, nullptr}});
     }
 
-    if (auto miSel = more_icons::activeIcon(IconType::Ship); !miSel.empty()) {
+    if (auto miSel = more_icons::activeIcon(IconType::Ship)) {
         res.insert({IconType::Ship, {-1, miSel}});
     } else {
-        res.insert({IconType::Ship, {gm->m_playerShip, ""}});
+        res.insert({IconType::Ship, {gm->m_playerShip, nullptr}});
     }
 
-    if (auto miSel = more_icons::activeIcon(IconType::Ball); !miSel.empty()) {
+    if (auto miSel = more_icons::activeIcon(IconType::Ball)) {
         res.insert({IconType::Ball, {-1, miSel}});
     } else {
-        res.insert({IconType::Ball, {gm->m_playerBall, ""}});
+        res.insert({IconType::Ball, {gm->m_playerBall, nullptr}});
     }
 
-    if (auto miSel = more_icons::activeIcon(IconType::Ufo); !miSel.empty()) {
+    if (auto miSel = more_icons::activeIcon(IconType::Ufo)) {
         res.insert({IconType::Ufo, {-1, miSel}});
     } else {
-        res.insert({IconType::Ufo, {gm->m_playerBird, ""}});
+        res.insert({IconType::Ufo, {gm->m_playerBird, nullptr}});
     }
 
-    if (auto miSel = more_icons::activeIcon(IconType::Wave); !miSel.empty()) {
+    if (auto miSel = more_icons::activeIcon(IconType::Wave)) {
         res.insert({IconType::Wave, {-1, miSel}});
     } else {
-        res.insert({IconType::Wave, {gm->m_playerDart, ""}});
+        res.insert({IconType::Wave, {gm->m_playerDart, nullptr}});
     }
-    if (auto miSel = more_icons::activeIcon(IconType::Robot); !miSel.empty()) {
+    if (auto miSel = more_icons::activeIcon(IconType::Robot)) {
         res.insert({IconType::Robot, {-1, miSel}});
     } else {
-        res.insert({IconType::Robot, {gm->m_playerRobot, ""}});
+        res.insert({IconType::Robot, {gm->m_playerRobot, nullptr}});
     }
 
-    if (auto miSel = more_icons::activeIcon(IconType::Spider); !miSel.empty()) {
+    if (auto miSel = more_icons::activeIcon(IconType::Spider)) {
         res.insert({IconType::Spider, {-1, miSel}});
     } else {
-        res.insert({IconType::Spider, {gm->m_playerSpider, ""}});
+        res.insert({IconType::Spider, {gm->m_playerSpider, nullptr}});
     }
 
-    if (auto miSel = more_icons::activeIcon(IconType::Swing); !miSel.empty()) {
+    if (auto miSel = more_icons::activeIcon(IconType::Swing)) {
         res.insert({IconType::Swing, {-1, miSel}});
     } else {
-        res.insert({IconType::Swing, {gm->m_playerSwing, ""}});
+        res.insert({IconType::Swing, {gm->m_playerSwing, nullptr}});
     }
 
-    if (auto miSel = more_icons::activeIcon(IconType::Special); !miSel.empty()) {
+    if (auto miSel = more_icons::activeIcon(IconType::Special)) {
         res.insert({IconType::Special, {-1, miSel}});
     } else {
-        res.insert({IconType::Special, {gm->m_playerStreak, ""}});
+        res.insert({IconType::Special, {gm->m_playerStreak, nullptr}});
     }
 
-    if (auto miSel = more_icons::activeIcon(IconType::DeathEffect); !miSel.empty()) {
+    if (auto miSel = more_icons::activeIcon(IconType::DeathEffect)) {
         res.insert({IconType::DeathEffect, {-1, miSel}});
     } else {
-        res.insert({IconType::DeathEffect, {gm->m_playerDeathEffect, ""}});
+        res.insert({IconType::DeathEffect, {gm->m_playerDeathEffect, nullptr}});
     }
 
-    if (auto miSel = more_icons::activeIcon(IconType::ShipFire); !miSel.empty()) {
+    if (auto miSel = more_icons::activeIcon(IconType::ShipFire)) {
         res.insert({IconType::ShipFire, {-1, miSel}});
     } else {
-        res.insert({IconType::ShipFire, {gm->m_playerShipFire, ""}});
+        res.insert({IconType::ShipFire, {gm->m_playerShipFire, nullptr}});
     }
 
-    if (auto miSel = more_icons::activeIcon(IconType::Jetpack); !miSel.empty()) {
+    if (auto miSel = more_icons::activeIcon(IconType::Jetpack)) {
         res.insert({IconType::Jetpack, {-1, miSel}});
     } else {
-        res.insert({IconType::Jetpack, {gm->m_playerJetpack, ""}});
+        res.insert({IconType::Jetpack, {gm->m_playerJetpack, nullptr}});
     }
 
     return res;
@@ -256,10 +256,10 @@ void IconSearchPopup::updateNodes() {
         CCSprite* sprite;
         switch (c.type) {
             case IconType::Special: {
-                if (c.moreIconsInfo == std::nullopt) {
+                if (!c.isMoreIcons) {
                     sprite = CCSprite::createWithSpriteFrameName(fmt::format("player_special_{:02}_001.png", c.id).c_str());
                 } else {
-                    sprite = CCSprite::create(c.moreIconsInfo->textures[0].c_str());
+                    sprite = CCSprite::create(more_icons::getIcon(c.name, c.type)->getTextureString().c_str());
                 }
                 sprite->setScale(.9f);
                 break;
@@ -290,8 +290,8 @@ void IconSearchPopup::updateNodes() {
                     .color1 = 17,
                     .color2 = 12,
                 });
-                if (c.moreIconsInfo != std::nullopt) {
-                    more_icons::updateSimplePlayer(is, c.moreIconsInfo->name, c.type);
+                if (c.isMoreIcons) {
+                    more_icons::updateSimplePlayer(is, more_icons::getIcon(c.name, c.type));
                     is->m_firstLayer->setPosition(is->getContentSize() / 2);
                 }
                 if (c.type == IconType::Ship || c.type == IconType::Robot || c.type == IconType::Spider || c.type == IconType::Jetpack) {
@@ -308,64 +308,11 @@ void IconSearchPopup::updateNodes() {
             }
         }
         auto btn = CCMenuItemExt::createSpriteExtra(sprite, [this, c](auto btn) {
-            if (c.moreIconsInfo != std::nullopt) {
-                if (more_icons::activeIcon(c.type) == c.moreIconsInfo->name) more_icons::createInfoPopup(c.name, c.type)->show();
-                else more_icons::setIcon(c.moreIconsInfo->name, c.type);
-            } else {
-                auto gm = GameManager::get();
-                if (!c.isUnlocked() && !getSettingFast<"icon-hack", bool>()) return ItemInfoPopup::create(c.id, GameManager::get()->iconTypeToUnlockType(c.type))->show();
-                if (more_icons::activeIcon(c.type).empty()) {
-                    SeedValueRSV* member = nullptr;
-                    switch (c.type) {
-                        case IconType::Cube:
-                            member = &gm->m_playerFrame;
-                            break;
-                        case IconType::Ship:
-                            member = &gm->m_playerShip;
-                            break;
-                        case IconType::Ball:
-                            member = &gm->m_playerBall;
-                            break;
-                        case IconType::Ufo:
-                            member = &gm->m_playerBird;
-                            break;
-                        case IconType::Wave:
-                            member = &gm->m_playerDart;
-                            break;
-                        case IconType::Robot:
-                            member = &gm->m_playerRobot;
-                            break;
-                        case IconType::Spider:
-                            member = &gm->m_playerSpider;
-                            break;
-                        case IconType::Swing:
-                            member = &gm->m_playerSwing;
-                            break;
-                        case IconType::Jetpack:
-                            member = &gm->m_playerJetpack;
-                            break;
-                        case IconType::DeathEffect:
-                            member = &gm->m_playerDeathEffect;
-                            break;
-                        case IconType::Special:
-                            member = &gm->m_playerStreak;
-                            break;
-                        case IconType::Item:
-                            break;
-                        case IconType::ShipFire:
-                            member = &gm->m_playerShipFire;
-                            break;
-                    }
-                    if (!member) {
-                        auto po = ItemInfoPopup::create(c.id, GameManager::get()->iconTypeToUnlockType(c.type));
-                        auto lab = CCLabelBMFont::create("Icon Search cannot handle selecting items, sorry!", "bigFont.fnt");
-                        lab->setOpacity(75);
-                        lab->setScale(.4f);
-                        lab->setID("item-select-warning"_spr);
-                        po->m_mainLayer->addChildAtPosition(lab, Anchor::Center, {0, -125}, false);
-                        po->show();
-                        return;
-                    }
+            if (c.isMoreIcons) {
+                if (more_icons::activeIcon(c.type) == more_icons::getIcon(c.name, c.type)) {
+                    more_icons::createInfoPopup(more_icons::getIcon(c.name, c.type))->show();
+                }
+                else {
                     if (auto spr = m_selectIcons[c.type]) {
                         spr->retain();
                         spr->removeFromParentAndCleanup(false);
@@ -378,27 +325,7 @@ void IconSearchPopup::updateNodes() {
                         btn->addChildAtPosition(spr, Anchor::Center, {0, 0}, false);
                         m_selectIcons[c.type] = spr;
                     }
-                    if (*member == c.id) {
-                        ItemInfoPopup::create(c.id, GameManager::get()->iconTypeToUnlockType(c.type))->show();
-                    } else {
-                        *member = c.id;
-                        switch (c.type) {
-                            case IconType::Cube:
-                            case IconType::Ball:
-                            case IconType::Ship:
-                            case IconType::Ufo:
-                            case IconType::Wave:
-                            case IconType::Robot:
-                            case IconType::Spider:
-                            case IconType::Swing:
-                            case IconType::Jetpack:
-                                m_garage->m_playerObject->updatePlayerFrame(c.id, c.type);
-                                gm->m_playerIconType = c.type;
-                                m_garage->m_selectedIconType = c.type;
-                                break;
-                            default: break;
-                        }
-                    }
+                    more_icons::setIcon(more_icons::getIcon(c.name, c.type), c.type);
                     // this is to sync up the vanilla cursor icon(s)
                     auto type = m_garage->m_iconType;
                     m_garage->selectTab(type);
@@ -409,7 +336,112 @@ void IconSearchPopup::updateNodes() {
                         }
                     });
                 }
-
+            } else {
+                auto gm = GameManager::get();
+                if (!c.isUnlocked() && !getSettingFast<"icon-hack", bool>()) return ItemInfoPopup::create(c.id, GameManager::get()->iconTypeToUnlockType(c.type))->show();
+                bool wasMI = more_icons::activeIcon(c.type);
+                if (wasMI) {
+                    more_icons::setIcon(nullptr, c.type);
+                }
+                SeedValueRSV* member = nullptr;
+                switch (c.type) {
+                    case IconType::Cube:
+                        member = &gm->m_playerFrame;
+                        break;
+                    case IconType::Ship:
+                        member = &gm->m_playerShip;
+                        break;
+                    case IconType::Ball:
+                        member = &gm->m_playerBall;
+                        break;
+                    case IconType::Ufo:
+                        member = &gm->m_playerBird;
+                        break;
+                    case IconType::Wave:
+                        member = &gm->m_playerDart;
+                        break;
+                    case IconType::Robot:
+                        member = &gm->m_playerRobot;
+                        break;
+                    case IconType::Spider:
+                        member = &gm->m_playerSpider;
+                        break;
+                    case IconType::Swing:
+                        member = &gm->m_playerSwing;
+                        break;
+                    case IconType::Jetpack:
+                        member = &gm->m_playerJetpack;
+                        break;
+                    case IconType::DeathEffect:
+                        member = &gm->m_playerDeathEffect;
+                        break;
+                    case IconType::Special:
+                        member = &gm->m_playerStreak;
+                        break;
+                    case IconType::Item:
+                        break;
+                    case IconType::ShipFire:
+                        member = &gm->m_playerShipFire;
+                        break;
+                }
+                if (!member) {
+                    auto po = ItemInfoPopup::create(c.id, GameManager::get()->iconTypeToUnlockType(c.type));
+                    auto lab = CCLabelBMFont::create("Icon Search cannot handle selecting items, sorry!", "bigFont.fnt");
+                    lab->setOpacity(75);
+                    lab->setScale(.4f);
+                    lab->setID("item-select-warning"_spr);
+                    po->m_mainLayer->addChildAtPosition(lab, Anchor::Center, {0, -125}, false);
+                    po->show();
+                    return;
+                }
+                if (auto spr = m_selectIcons[c.type]) {
+                    spr->retain();
+                    spr->removeFromParentAndCleanup(false);
+                    btn->addChildAtPosition(spr, Anchor::Center, {0, 0}, false);
+                    spr->release();
+                } else {
+                    spr = CCSprite::createWithSpriteFrameName("GJ_select_001.png");
+                    spr->setID(iconTypeToString(c.type) + "-select-sprite");
+                    spr->setScale(.9f);
+                    btn->addChildAtPosition(spr, Anchor::Center, {0, 0}, false);
+                    m_selectIcons[c.type] = spr;
+                }
+                if (*member == c.id) {
+                    if (!wasMI) {
+                        ItemInfoPopup::create(c.id, GameManager::get()->iconTypeToUnlockType(c.type))->show();
+                    } else {
+                        m_garage->m_playerObject->updatePlayerFrame(c.id, c.type);
+                        gm->m_playerIconType = c.type;
+                        m_garage->m_selectedIconType = c.type;
+                    }
+                } else {
+                    *member = c.id;
+                    switch (c.type) {
+                        case IconType::Cube:
+                        case IconType::Ball:
+                        case IconType::Ship:
+                        case IconType::Ufo:
+                        case IconType::Wave:
+                        case IconType::Robot:
+                        case IconType::Spider:
+                        case IconType::Swing:
+                        case IconType::Jetpack:
+                            m_garage->m_playerObject->updatePlayerFrame(c.id, c.type);
+                            gm->m_playerIconType = c.type;
+                            m_garage->m_selectedIconType = c.type;
+                            break;
+                        default: break;
+                    }
+                }
+                // this is to sync up the vanilla cursor icon(s)
+                auto type = m_garage->m_iconType;
+                m_garage->selectTab(type);
+                // we love touch prio weirdness
+                queueInMainThread([this]{
+                    if (auto handler = CCTouchDispatcher::get()->findHandler(m_garage->m_iconSelection->m_scrollLayer->m_extendedLayer->getChildByIndex(0)->getChildByType<cocos2d::CCMenu>(0))) {
+                        CCTouchDispatcher::get()->setPriority(-128, handler->getDelegate());
+                    }
+                });
             }
         });
         btn->m_iconType = c.type;
@@ -428,7 +460,7 @@ void IconSearchPopup::updateNodes() {
         m_menu->addChild(btn);
         if (c.type == IconType::Item) continue;
         auto p = sel.at(c.type);
-        if ((c.moreIconsInfo != std::nullopt && p.second == c.moreIconsInfo->name) || (c.moreIconsInfo == std::nullopt && c.id == p.first)) {
+        if ((c.isMoreIcons && p.second == more_icons::getIcon(c.name, c.type)) || (!c.isMoreIcons && c.id == p.first)) {
             auto spr = CCSprite::createWithSpriteFrameName("GJ_select_001.png");
             spr->setID(iconTypeToString(c.type) + "-select-sprite");
             spr->setScale(.9f);
@@ -542,28 +574,26 @@ void IconSearchPopup::getCandidates() {
 }
 
 void IconSearchPopup::loadMoreIconsCandidates() {
-    if (!more_icons::get()) return; // not loaded
+    if (!Loader::get()->isModLoaded("hiimjustin000.more_icons")) return; // not loaded
     int added = 0;
-    if (auto icons = more_icons::getIcons()) {
-        for (auto [type, iconList] : *icons) {
-            for (IconInfo& icon : iconList) {
-                addMICandidate(type, icon);
-                added++;
-            }
+    for (auto [type, iconList] : more_icons::getAllIcons()) {
+        for (IconInfo& icon : iconList) {
+            addMICandidate(type, &icon);
+            added++;
         }
     }
     log::debug("Loaded {} more icons candidates", added);
 }
 
-void IconSearchPopup::addMICandidate(IconType type, IconInfo& info) {
+void IconSearchPopup::addMICandidate(IconType type, IconInfo* info) {
     auto res = SearchResult{
         .type = type,
         .id = -1,
         .desc = "added by the more icons mod",
         .game = "more icons",
-        .achievement = info.packName,
-        .name = info.name,
-        .moreIconsInfo = info,
+        .achievement = info->getPackName(),
+        .name = info->getName(),
+        .isMoreIcons = true,
     };
 
     /* unlock states

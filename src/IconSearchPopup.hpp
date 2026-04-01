@@ -9,7 +9,7 @@
 #include <utility>
 
 #define MORE_ICONS_EVENTS
-#include <hiimjustin000.more_icons/include/MoreIconsV2.hpp>
+#include <hiimjustin000.more_icons/include/MoreIcons.hpp>
 
 struct Search {
     std::string query;
@@ -26,7 +26,7 @@ struct SearchResult {
     std::string game;
     std::string achievement;
     std::string name;
-    std::optional<IconInfo> moreIconsInfo = std::nullopt;
+    bool isMoreIcons = false;
     [[nodiscard]] bool isUnlocked() const;
 };
 
@@ -49,7 +49,7 @@ public:
     void getCandidates();
     void loadMoreIconsCandidates();
     void addCandidate(IconType type, int id);
-    void addMICandidate(IconType type, IconInfo& info);
+    void addMICandidate(IconType type, IconInfo* info);
 
     static IconSearchPopup* create(GJGarageLayer* garage);
 
