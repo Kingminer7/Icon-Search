@@ -1,4 +1,4 @@
-# Last updated 2/15/26
+# Last updated 4/1/26
 
 name: Build Geode Mod
 
@@ -52,14 +52,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: hiimjasmine00/download-geode-dependency@main
+        with:
+          repository: undefined06855/Icon-Ninja
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
+          workflow: multi-platform.yml
+
       - name: Build the mod
         uses: hiimjasmine00/build-geode-mod@xwin
         with:
           bindings: geode-sdk/bindings
           bindings-ref: main
-          sdk: nightly
+          # sdk: nightly
           combine: true
-          build-config: ${{ !(github.event.inputs.build_type == 'release' || (github.event_name == 'push' && startsWith(github.event.head_commit.message, '[rel]'))) && (matrix.config.target == 'Win64' && 'RelWithDebInfo' || 'Debug') || 'Release' }}
+          build-config: ${{ matrix.config.target == 'Win64' && 'RelWithDebInfo' || ( !(github.event.inputs.build_type == 'release' || (github.event_name == 'push' && startsWith(github.event.head_commit.message, '[rel]'))) && 'Debug' || 'Release' ) }}
           export-pdb: true
           export-symbols: true
           target: ${{ matrix.config.target }}
