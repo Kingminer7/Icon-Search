@@ -42,6 +42,7 @@ protected:
     geode::TextInput* m_input = nullptr;
     CCMenuItemSpriteExtra* m_prev = nullptr;
     CCMenuItemSpriteExtra* m_next = nullptr;
+    cocos2d::CCLabelBMFont* m_countLab = nullptr; 
     std::map<IconType, cocos2d::CCSprite*> m_selectIcons = {};
 public:
     void updateNodes();

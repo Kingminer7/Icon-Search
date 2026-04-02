@@ -119,6 +119,13 @@ bool IconSearchPopup::init(GJGarageLayer* garage) {
     static_cast<CCSprite*>(m_next->getNormalImage())->setFlipX(true);
     m_buttonMenu->addChildAtPosition(m_next, Anchor::Center, {220, -15});
 
+    m_countLab = CCLabelBMFont::create("Temp Text", "bigFont.fnt");
+    m_countLab->setID("count-label");
+    m_countLab->setOpacity(127);
+    m_countLab->setScale(.3f);
+    m_countLab->setAnchorPoint({1, 0});
+    m_mainLayer->addChildAtPosition(m_countLab, Anchor::BottomRight, {-3, 5});
+
     updateNodes();
 
     return true;
@@ -470,6 +477,8 @@ void IconSearchPopup::updateNodes() {
         }
     }
     m_menu->updateLayout();
+
+    m_countLab->setString(fmt::format("Showing {} of {} results", m_menu->getChildrenCount(), m_results.size()).c_str());
 
     m_prev->setVisible(m_search.page > 0);
     m_next->setVisible(m_search.page < m_results.size() / m_search.pageSize);

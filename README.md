@@ -11,6 +11,8 @@ You can search by:
 - Achievement description
 - The spinoff game it came from
 
+And yes, it has support for [More Icons](mod:hiimjustin000.more_icons).
+
 ## Notes 
 
 - Currently, you cannot search based on keywords like "cat" or "mario", but this is planned for a future update.
