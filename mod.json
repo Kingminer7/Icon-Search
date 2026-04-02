@@ -29,7 +29,7 @@
         "icon-hack": {
             "type": "bool",
             "name": "Icon Hack",
-            "description": "Unlocks all icons <co>in the search menu</c>. This does NOT apply to the regular icon kit.",
+            "description": "Unlocks all icons <co>in the search menu</c>. This also applies to the regular icon kit.",
             "default": false
         }
     },
