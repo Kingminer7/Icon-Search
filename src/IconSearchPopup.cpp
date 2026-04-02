@@ -326,6 +326,7 @@ void IconSearchPopup::updateNodes() {
                         m_selectIcons[c.type] = spr;
                     }
                     more_icons::setIcon(more_icons::getIcon(c.name, c.type), c.type);
+                    more_icons::updateSimplePlayer(m_garage->m_playerObject, c.type);
                     // this is to sync up the vanilla cursor icon(s)
                     auto type = m_garage->m_iconType;
                     m_garage->selectTab(type);
