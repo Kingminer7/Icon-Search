@@ -1,10 +1,5 @@
 # Icon Search
 
-![Mod Version](https://api.geode-sdk.org/v1/mods/km7dev.icon_search/status_badge?stat=version)
-![Downloads](https://api.geode-sdk.org/v1/mods/km7dev.icon_search/status_badge?stat=downloads)
-![GD Version](https://api.geode-sdk.org/v1/mods/km7dev.icon_search/status_badge?stat=gd_version)
-![Geode Version](https://api.geode-sdk.org/v1/mods/km7dev.icon_search/status_badge?stat=geode_version)
-
 Trying to find an icon fast? Well now you can search for it! Open up the icon kit and click the search button on the far right side of the category buttons, and search.
 
 You can search by:
@@ -15,8 +10,6 @@ You can search by:
 - Achievement name
 - Achievement description
 - The spinoff game it came from
-
-And yes, it has support for [More Icons](mod:hiimjustin000.more_icons).
 
 ## Notes 
 
